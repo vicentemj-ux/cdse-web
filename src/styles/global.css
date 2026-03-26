@@ -12,6 +12,16 @@
   }
 }
 
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-electric-blue text-white font-semibold rounded-lg transition-all duration-200 hover:bg-blue-600 hover:shadow-lg hover:shadow-electric-blue/25 focus:outline-none focus:ring-2 focus:ring-electric-blue focus:ring-offset-2;

@@ -1,0 +1,203 @@
+---
+// Viral Tech Showcase - CSS scroll-snap carousel with glassmorphism cards
+// Uses poster images for performance, lazy loading enabled
+
+interface VideoCard {
+  id: string;
+  title: string;
+  description: string;
+  poster: string;
+  socialLink: string;
+  platform: 'instagram' | 'tiktok';
+}
+
+const videoCards: VideoCard[] = [
+  {
+    id: 'iphone-housing',
+    title: 'iPhone Housing Swap',
+    description: 'Satisfying tech transformation',
+    poster: '/images/iphone-housing-poster.jpg',
+    socialLink: 'https://instagram.com/cdse_losmochis',
+    platform: 'instagram'
+  },
+  {
+    id: 'switch-mods',
+    title: 'Nintendo Switch Pro Mods',
+    description: 'Expert soldering & hardware upgrades',
+    poster: '/images/switch-mods-poster.jpg',
+    socialLink: 'https://tiktok.com/@cdse_losmochis',
+    platform: 'tiktok'
+  },
+  {
+    id: 'macbook-repair',
+    title: 'MacBook Logic Board Repair',
+    description: 'Micro-component precision',
+    poster: '/images/macbook-repair-poster.jpg',
+    socialLink: 'https://instagram.com/cdse_losmochis',
+    platform: 'instagram'
+  },
+  {
+    id: 'screen-replacement',
+    title: 'Samsung Screen Replacement',
+    description: 'Factory-quality restoration',
+    poster: '/images/samsung-screen-poster.jpg',
+    socialLink: 'https://tiktok.com/@cdse_losmochis',
+    platform: 'tiktok'
+  },
+  {
+    id: 'ps5-cleaning',
+    title: 'PS5 Deep Clean & Thermal Paste',
+    description: 'Performance optimization',
+    poster: '/images/ps5-cleaning-poster.jpg',
+    socialLink: 'https://instagram.com/cdse_losmochis',
+    platform: 'instagram'
+  }
+];
+---
+
+<section class="w-full py-16 bg-gradient-to-b from-slate-100 to-white overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section Header -->
+    <div class="text-center mb-10">
+      <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
+        Our Viral Tech Transformations
+      </h2>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        Watch our most satisfying repairs and mods that have captivated thousands
+      </p>
+    </div>
+
+    <!-- Horizontal Carousel with CSS Scroll-Snap -->
+    <div 
+      class="flex gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 -mx-4 px-4 scrollbar-hide"
+      style="scroll-padding: 1rem;"
+    >
+      {videoCards.map((card) => (
+        <article 
+          class="video-card group flex-shrink-0 w-[280px] sm:w-[300px] snap-center"
+          data-card-id={card.id}
+        >
+          <div class="relative aspect-[9/16] rounded-2xl overflow-hidden bg-slate-900 shadow-xl transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-tech-teal/30 group-hover:-translate-y-2 group-hover:scale-[1.02]">
+            <!-- Poster Image with Lazy Loading -->
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <!-- Placeholder gradient background - replace with actual images -->
+              <div class="absolute inset-0 bg-gradient-to-br from-electric-blue/20 to-tech-teal/20"></div>
+              
+              <!-- Tech pattern overlay -->
+              <div class="absolute inset-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+            </div>
+
+            <!-- Play Button Overlay -->
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">
+                <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Glassmorphism Title Card -->
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 transition-all duration-300 group-hover:bg-white/15 group-hover:border-tech-teal/40">
+                <h3 class="text-white font-bold text-lg mb-1 drop-shadow-lg">
+                  {card.title}
+                </h3>
+                <p class="text-white/80 text-sm mb-3">
+                  {card.description}
+                </p>
+                
+                <!-- Social Link -->
+                <a 
+                  href={card.socialLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 text-xs text-white/70 hover:text-white transition-colors"
+                >
+                  {card.platform === 'instagram' ? (
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  ) : (
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                    </svg>
+                  )}
+                  <span>View on {card.platform === 'instagram' ? 'Instagram' : 'TikTok'}</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Tech Teal Glow Effect on Hover -->
+            <div class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style="box-shadow: inset 0 0 60px rgba(23, 162, 184, 0.3);"></div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Follow Our Tech Journey Bar -->
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+      <span class="text-slate-700 font-semibold text-lg">Follow Our Tech Journey</span>
+      <div class="flex items-center gap-4">
+        <!-- Instagram -->
+        <a 
+          href="https://instagram.com/cdse_losmochis" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white font-medium transition-all duration-200 hover:shadow-lg hover:scale-105"
+          aria-label="Follow us on Instagram"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+          <span class="hidden sm:inline">Instagram</span>
+        </a>
+
+        <!-- TikTok -->
+        <a 
+          href="https://tiktok.com/@cdse_losmochis" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white font-medium transition-all duration-200 hover:shadow-lg hover:scale-105"
+          aria-label="Follow us on TikTok"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+          </svg>
+          <span class="hidden sm:inline">TikTok</span>
+        </a>
+
+        <!-- Facebook -->
+        <a 
+          href="https://facebook.com/cdselosmochis" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium transition-all duration-200 hover:shadow-lg hover:scale-105"
+          aria-label="Follow us on Facebook"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          <span class="hidden sm:inline">Facebook</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch-friendly scroll behavior */
+  @media (hover: none) and (pointer: coarse) {
+    .video-card {
+      scroll-snap-align: center;
+    }
+  }
+</style>
