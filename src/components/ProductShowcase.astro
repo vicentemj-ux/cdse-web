@@ -1,0 +1,80 @@
+---
+// Product Showcase Component - Astro (zero-JS)
+---
+
+<section class="w-full py-20 px-4 bg-white">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold text-slate-900 mb-4">Featured Products</h2>
+      <p class="text-xl text-slate-600">Quality electronics at competitive prices</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Product Card 1 -->
+      <div class="bg-slate-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-slate-200">
+        <div class="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+          <div class="w-32 h-32 bg-slate-400 rounded-lg flex items-center justify-center">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-xl font-bold text-slate-900 mb-2">Samsung Galaxy A53</h3>
+          <p class="text-slate-600 mb-4">128GB Storage • Excellent Condition</p>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">In Stock: 5</span>
+          </div>
+          <div class="space-y-2 border-t border-slate-200 pt-4">
+            <p class="text-slate-900 font-semibold text-lg">Precio Menudeo: $6,499 MXN</p>
+            <a href="#" class="text-blue-600 font-semibold hover:text-blue-700">Request Wholesale Pricing →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Card 2 -->
+      <div class="bg-slate-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-slate-200">
+        <div class="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+          <div class="w-32 h-32 bg-slate-400 rounded-lg flex items-center justify-center">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20m0 0l-.75 3M9 20H5m4 0h8m-8 0l.75-3m0 0L15 17m0 0l.75 3m0 0l.75-3m0 0h4m-4 0h8"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-xl font-bold text-slate-900 mb-2">MacBook Pro 13"</h3>
+          <p class="text-slate-600 mb-4">M1 Chip • 8GB RAM • 256GB SSD</p>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">In Stock: 2</span>
+          </div>
+          <div class="space-y-2 border-t border-slate-200 pt-4">
+            <p class="text-slate-900 font-semibold text-lg">Precio Menudeo: $18,999 MXN</p>
+            <a href="#" class="text-blue-600 font-semibold hover:text-blue-700">Request Wholesale Pricing →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Card 3 -->
+      <div class="bg-slate-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-slate-200">
+        <div class="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+          <div class="w-32 h-32 bg-slate-400 rounded-lg flex items-center justify-center">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="p-6">
+          <h3 class="text-xl font-bold text-slate-900 mb-2">Nintendo Switch OLED</h3>
+          <p class="text-slate-600 mb-4">White • Complete Set • Like New</p>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-block bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">Low Stock: 1</span>
+          </div>
+          <div class="space-y-2 border-t border-slate-200 pt-4">
+            <p class="text-slate-900 font-semibold text-lg">Precio Menudeo: $7,299 MXN</p>
+            <a href="#" class="text-blue-600 font-semibold hover:text-blue-700">Request Wholesale Pricing →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
