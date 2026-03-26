@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/links", "destination": "/links.html" }
-  ]
-}
