@@ -9,7 +9,7 @@ Sitio web profesional y moderno para CDSE, negocio de reparación y venta de com
 - **Diseño corporativo tecnológico moderno**: Interfaz limpia y profesional con tonos azul eléctrico y teal tecnológico
 - **Enfoque en generación de leads**: Botón de WhatsApp destacado para cotizaciones
 - **Catálogo de productos**: Cuadrícula dinámica de productos con estado de inventario
-- **Señales de confianza**: Marcas partners, testimonios y distintivo de 15 años de excelencia
+- **Señales de confianza**: Marcas partners, testimonios y distintivo de 16 años de excelencia
 - **Diseño responsivo**: Enfoque mobile-first para todos los dispositivos
 
 ## Estructura del Proyecto
