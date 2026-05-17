@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120">
+  <g transform="translate(100,60)">
+    <rect x="-75" y="-22" width="150" height="44" rx="22" fill="#1428A0"/>
+    <text x="0" y="8" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="white" text-anchor="middle" letter-spacing="4">SAMSUNG</text>
+  </g>
+</svg>
