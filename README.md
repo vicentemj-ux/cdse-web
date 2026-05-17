@@ -8,8 +8,8 @@ Sitio web profesional y moderno para CDSE, negocio de reparación y venta de com
 - **Islas de React**: Componentes interactivos para seguimiento de reparaciones y formularios
 - **Diseño corporativo tecnológico moderno**: Interfaz limpia y profesional con tonos azul eléctrico y teal tecnológico
 - **Enfoque en generación de leads**: Botón de WhatsApp destacado para cotizaciones
-- **Catálogo de productos**: Cuadrícula dinámica de productos con estado de inventario
 - **Señales de confianza**: Marcas partners, testimonios y distintivo de 16 años de excelencia
+- **Catálogo de productos**: *Pendiente — se conectará a tallercloud.net para sincronizar productos de venta en tiempo real*
 - **Diseño responsivo**: Enfoque mobile-first para todos los dispositivos
 
 ## Estructura del Proyecto
