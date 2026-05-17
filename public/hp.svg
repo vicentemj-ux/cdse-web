@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120">
-  <g transform="translate(100,60)">
-    <circle cx="0" cy="0" r="28" fill="#0096D6"/>
-    <text x="-16" y="3" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white" letter-spacing="1">hp</text>
-  </g>
-</svg>

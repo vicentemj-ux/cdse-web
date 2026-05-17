@@ -1,56 +1,74 @@
 ---
 // Services Grid Component - Astro (zero-JS)
+
+interface Service {
+  title: string;
+  description: string;
+  image: string;
+}
+
+const services: Service[] = [
+  {
+    title: 'Reparación de Celulares',
+    description: 'Especialistas en microsoldadura de precisión, reemplazo de pantallas, baterías y restauración por daños severos.',
+    image: '/services1.png',
+  },
+  {
+    title: 'Servicio de Cómputo Avanzado',
+    description: 'Diagnóstico a nivel componente de placa madre, actualización de hardware, reballing y optimización de rendimiento.',
+    image: '/services2.png',
+  },
+  {
+    title: 'Reparación de Consolas',
+    description: 'Mantenimiento profundo para PS5, Xbox y Nintendo Switch. Solución definitiva de drift de joystick y sobrecalentamiento.',
+    image: '/services3.png',
+  },
+];
 ---
 
-<section class="w-full py-20 px-4 bg-slate-50">
+<section class="bg-[#F5F5F7] py-24 md:py-32 px-6">
   <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-16">
-      <h2 class="text-4xl font-bold text-slate-900 mb-4">Nuestros Servicios</h2>
-      <p class="text-xl text-slate-600">Soluciones profesionales de reparación para todas tus necesidades electrónicas</p>
+    <!-- Header -->
+    <div class="text-center mb-16 md:mb-20">
+      <h2 class="font-bold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight">
+        Nuestros Servicios
+      </h2>
+      <p class="mt-5 text-[#86868b] text-xl max-w-2xl mx-auto">
+        Soluciones de ingeniería de precisión para tus dispositivos
+      </p>
     </div>
 
+    <!-- Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <!-- Cellphone Repair -->
-      <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-8 border-t-4 border-blue-600">
-        <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-3">Reparación de Celulares</h3>
-        <p class="text-slate-600 mb-6">
-          Reparación de pantallas, cambio de baterías, reparación de puertos de carga y restauración por daño líquido de todas las marcas.
-        </p>
-        <a href="#" class="inline-block text-blue-600 font-semibold hover:text-blue-700">Más Información →</a>
-      </div>
+      {services.map((service) => (
+        <div class="group bg-white rounded-[32px] shadow-sm overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+          <!-- Image -->
+          <div class="aspect-[4/3] overflow-hidden">
+            <img
+              src={service.image}
+              alt={service.title}
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          </div>
 
-      <!-- Computer Service -->
-      <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-8 border-t-4 border-teal-600">
-        <div class="w-16 h-16 bg-teal-100 rounded-lg flex items-center justify-center mb-6">
-          <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20m0 0l-.75 3M9 20H5m4 0h8m-8 0l.75-3m0 0L15 17m0 0l.75 3m0 0l.75-3m0 0h4m-4 0h8"></path>
-          </svg>
+          <!-- Content -->
+          <div class="p-8 pb-10">
+            <h3 class="text-2xl font-semibold text-[#1d1d1f] mt-2">
+              {service.title}
+            </h3>
+            <p class="text-[#86868b] leading-relaxed mt-3">
+              {service.description}
+            </p>
+            <a
+              href="#"
+              class="inline-block text-[#0066cc] font-medium mt-6 hover:underline"
+            >
+              Más información →
+            </a>
+          </div>
         </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-3">Servicio de Cómputo</h3>
-        <p class="text-slate-600 mb-6">
-          Reparación de laptops, diagnóstico de escritorio, actualización de hardware y solución de problemas de software.
-        </p>
-        <a href="#" class="inline-block text-teal-600 font-semibold hover:text-teal-700">Más Información →</a>
-      </div>
-
-      <!-- Console Repair -->
-      <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-8 border-t-4 border-blue-500">
-        <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-          <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-3">Reparación de Consolas</h3>
-        <p class="text-slate-600 mb-6">
-          Reparación de PS5, Xbox y Nintendo Switch, incluyendo controladores, sobrecalentamiento y problemas de unidad de disco.
-        </p>
-        <a href="#" class="inline-block text-blue-500 font-semibold hover:text-blue-600">Más Información →</a>
-      </div>
+      ))}
     </div>
   </div>
 </section>
