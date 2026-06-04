@@ -1,0 +1,415 @@
+---
+import CatalogLayout from '../layouts/CatalogLayout.astro';
+import inventory from '../data/inventory.json';
+
+const whatsappNumber = '526681227393';
+const heroWhatsappMessage = 'Hola CDSE, quiero instalar modchip en mi Nintendo Switch.';
+const promoWhatsappMessage = 'Hola CDSE, quiero informacion para modificar mi Nintendo Switch e instalar juegos.';
+
+const genreCounts: Record<string, number> = {};
+inventory.forEach((game) => {
+  game.genres.forEach((genre) => {
+    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+  });
+});
+
+const topGenres = Object.entries(genreCounts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12)
+  .map(([name]) => name);
+
+const promo = inventory.find((game) => game.isPromo) || null;
+const gamesOnly = inventory.filter((game) => !game.isPromo);
+const totalGames = gamesOnly.length;
+---
+
+<CatalogLayout
+  title="Catalogo de Juegos 2026 | CDSE"
+  description="Catalogo interactivo de juegos para Nintendo Switch compatible con Switch Normal, Lite y OLED."
+  ogImage="https://cdse.com.mx/og-landpage.png"
+  ogUrl="https://cdse.com.mx/catalogo"
+  canonical="https://cdse.com.mx/catalogo"
+>
+  <main class="min-h-screen pb-32">
+    <header class="sticky top-0 z-40 border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl">
+      <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between gap-4">
+          <a href="/" class="flex shrink-0 items-center gap-2" aria-label="CDSE - Inicio">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#12B5C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            <span class="hidden font-bold tracking-tight text-white sm:inline">CDSE</span>
+          </a>
+
+          <div class="relative max-w-xl flex-1">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg class="h-4 w-4 text-white/40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+            </div>
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Buscar juegos..."
+              class="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/40 transition-all focus:border-[#12B5C9]/60 focus:outline-none focus:ring-1 focus:ring-[#12B5C9]/30"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="hidden font-mono text-xs text-white/50 md:block">
+            <span id="results-count">{totalGames}</span> JUEGOS
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+      <div class="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md sm:p-5">
+        <div class="relative z-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+          <div class="min-w-0">
+            <h1 class="text-lg font-bold leading-tight text-white sm:text-xl">
+              Modchip Nintendo Switch <span class="text-[#12B5C9]">Normal, Lite y OLED</span>
+            </h1>
+            <p class="mt-1 text-xs leading-relaxed text-white/50">
+              <span class="font-medium text-white/70">{totalGames} juegos digitales</span> listos para instalar. Servicio de
+              <span class="font-medium text-white/70"> modchip HWFLY, Picofly </span>
+              y
+              <span class="font-medium text-white/70"> Atmosphere + Hekate </span>
+              en Los Mochis, Sinaloa.
+            </p>
+            <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] uppercase tracking-wider text-white/25">
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Switch Normal</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Switch Lite</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Switch OLED</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">HWFLY</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Picofly</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Atmosphere</span>
+              <span class="rounded border border-white/10 bg-white/5 px-1.5 py-0.5">Hekate</span>
+            </div>
+          </div>
+
+          <a
+            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(heroWhatsappMessage)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-[#12B5C9] to-[#0ea5a5] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#050505] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_24px_rgba(18,181,201,0.35)] active:scale-95"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Instalar Modchip
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div class="scrollbar-hide flex items-center gap-2 overflow-x-auto pb-2" id="genre-filters">
+        <button
+          data-genre="all"
+          class="genre-pill active shrink-0 rounded-full border border-[#12B5C9]/40 bg-[#12B5C9]/15 px-4 py-1.5 text-xs font-medium text-[#12B5C9] transition-all duration-300 hover:shadow-[0_0_12px_rgba(18,181,201,0.25)]"
+        >
+          Todos
+        </button>
+        {topGenres.map((genre) => (
+          <button
+            data-genre={genre}
+            class="genre-pill shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70 transition-all duration-300 hover:border-white/25 hover:text-white"
+          >
+            {genre}
+          </button>
+        ))}
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div id="games-grid" class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+        {gamesOnly.map((game, index) => (
+          <>
+            {promo && promo.promoEnabled && index > 0 && index % promo.promoInterval === 0 && (
+              <a
+                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(promoWhatsappMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group relative overflow-hidden rounded-2xl border border-[#12B5C9]/30 bg-gradient-to-br from-[#12B5C9]/10 to-[#0a0a0a] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#12B5C9]/60 hover:shadow-[0_0_24px_rgba(18,181,201,0.2)]"
+              >
+                <div class="relative flex aspect-[3/4] flex-col items-center justify-center overflow-hidden p-4 text-center">
+                  <div class="absolute inset-0 bg-[#12B5C9]/5 opacity-50"></div>
+                  <div class="relative z-10">
+                    <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#12B5C9]/40 bg-[#12B5C9]/20 text-[#12B5C9]">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                      </svg>
+                    </div>
+                    <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-white">{promo.promoTitle}</h3>
+                    <p class="text-[10px] leading-relaxed text-white/60">{promo.promoSubtitle}</p>
+                  </div>
+                </div>
+                <div class="border-t border-white/5 p-3">
+                  <p class="text-center font-mono text-[10px] uppercase tracking-wider text-[#12B5C9]">Click para WhatsApp</p>
+                </div>
+              </a>
+            )}
+
+            <article
+              class="game-card group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-lg hover:shadow-black/20"
+              data-name={game.name.toLowerCase()}
+              data-genres={JSON.stringify(game.genres)}
+              data-index={index}
+              role="button"
+              tabindex="0"
+              aria-label={`Seleccionar ${game.name}`}
+            >
+              <div class="relative aspect-[3/4] overflow-hidden bg-white/5">
+                {game.cover ? (
+                  <img
+                    src={game.cover}
+                    alt={`Portada de ${game.name}`}
+                    loading="lazy"
+                    decoding="async"
+                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onerror="this.style.display='none'"
+                  />
+                ) : (
+                  <div class="flex h-full w-full items-center justify-center text-white/20">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                  </div>
+                )}
+
+                <div class="selection-overlay pointer-events-none absolute inset-0 bg-[#12B5C9]/10 opacity-0 transition-opacity duration-300"></div>
+                <div class="check-badge absolute right-2 top-2 flex h-7 w-7 scale-75 items-center justify-center rounded-full bg-[#12B5C9] text-[#050505] opacity-0 shadow-[0_0_12px_rgba(18,181,201,0.5)] transition-all duration-300">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="p-3">
+                <h3 class="line-clamp-2 text-sm font-semibold leading-tight text-white transition-colors duration-300 group-hover:text-[#12B5C9]">
+                  {game.name}
+                </h3>
+                <p class="mt-1 truncate font-mono text-[10px] uppercase tracking-wider text-white/40">
+                  {game.genres.slice(0, 2).join(' · ')}
+                </p>
+                <a
+                  href={`/juego/${index}`}
+                  onclick="event.stopPropagation();"
+                  class="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-[#12B5C9] transition-colors hover:text-white"
+                >
+                  <span>Ver detalles</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"></path>
+                  </svg>
+                </a>
+              </div>
+
+              <div class="selection-ring pointer-events-none absolute inset-0 rounded-2xl border-2 border-[#12B5C9] opacity-0 shadow-[0_0_20px_rgba(18,181,201,0.15)] transition-opacity duration-300"></div>
+            </article>
+          </>
+        ))}
+      </div>
+
+      <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+        <svg class="mb-4 h-12 w-12 text-white/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <p class="text-sm text-white/50">No se encontraron juegos</p>
+        <p class="mt-1 text-xs text-white/30">Intenta con otro termino de busqueda</p>
+      </div>
+    </section>
+
+    <div
+      id="selection-bar"
+      class="pointer-events-none fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 translate-y-8 opacity-0 transition-all duration-500"
+    >
+      <div class="flex items-center justify-between gap-4 rounded-2xl border border-[#12B5C9]/30 bg-[#0a0a0a]/90 px-5 py-4 shadow-[0_0_40px_rgba(18,181,201,0.15)] backdrop-blur-2xl">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#12B5C9]/30 bg-[#12B5C9]/15 text-[#12B5C9]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-white"><span id="selection-count">0</span> juegos seleccionados</p>
+            <p class="truncate text-[11px] text-white/40">Envia tu lista por WhatsApp</p>
+          </div>
+        </div>
+
+        <a
+          id="whatsapp-btn"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-[#12B5C9] to-[#0ea5a5] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-[#050505] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_24px_rgba(18,181,201,0.35)] active:scale-95"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          Cotizar
+        </a>
+      </div>
+    </div>
+  </main>
+</CatalogLayout>
+
+<script define:vars={{ whatsappNumber }}>
+  (() => {
+    const searchInput = document.getElementById('search-input');
+    const genreButtons = document.querySelectorAll('.genre-pill');
+    const grid = document.getElementById('games-grid');
+    const cards = Array.from(grid.querySelectorAll('.game-card'));
+    const emptyState = document.getElementById('empty-state');
+    const resultsCount = document.getElementById('results-count');
+    const selectionBar = document.getElementById('selection-bar');
+    const selectionCount = document.getElementById('selection-count');
+    const whatsappBtn = document.getElementById('whatsapp-btn');
+
+    let selectedIndices = new Set();
+    let activeGenre = 'all';
+    let searchQuery = '';
+
+    function updateGenreStyles() {
+      genreButtons.forEach((button) => {
+        const isActive = button.dataset.genre === activeGenre;
+        button.className = isActive
+          ? 'genre-pill active shrink-0 rounded-full border border-[#12B5C9]/40 bg-[#12B5C9]/15 px-4 py-1.5 text-xs font-medium text-[#12B5C9] transition-all duration-300 hover:shadow-[0_0_12px_rgba(18,181,201,0.25)]'
+          : 'genre-pill shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70 transition-all duration-300 hover:border-white/25 hover:text-white';
+      });
+    }
+
+    function filterCards() {
+      const query = searchQuery.trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const name = card.dataset.name || '';
+        const genres = JSON.parse(card.dataset.genres || '[]');
+        const matchesSearch = !query || name.includes(query);
+        const matchesGenre = activeGenre === 'all' || genres.includes(activeGenre);
+        const shouldShow = matchesSearch && matchesGenre;
+
+        card.style.display = shouldShow ? '' : 'none';
+        if (shouldShow) visible += 1;
+      });
+
+      if (resultsCount) resultsCount.textContent = String(visible);
+
+      if (visible === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+      } else {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+      }
+    }
+
+    function updateWhatsAppLink() {
+      if (!whatsappBtn) return;
+      if (selectedIndices.size === 0) {
+        whatsappBtn.href = '#';
+        return;
+      }
+
+      const selectedGames = [];
+      cards.forEach((card) => {
+        if (selectedIndices.has(card.dataset.index)) {
+          const title = card.querySelector('h3')?.textContent?.trim();
+          if (title) selectedGames.push(title);
+        }
+      });
+
+      const message = `Buenas CDSE, este es mi catalogo seleccionado desde la pagina:%0A%0A${selectedGames
+        .map((game) => `[${game}]`)
+        .join('%0A')}`;
+
+      whatsappBtn.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+    }
+
+    function updateSelectionUI() {
+      cards.forEach((card) => {
+        const index = card.dataset.index;
+        const isSelected = selectedIndices.has(index);
+        const overlay = card.querySelector('.selection-overlay');
+        const ring = card.querySelector('.selection-ring');
+        const badge = card.querySelector('.check-badge');
+
+        if (isSelected) {
+          overlay?.classList.remove('opacity-0');
+          ring?.classList.remove('opacity-0');
+          badge?.classList.remove('opacity-0', 'scale-75');
+          badge?.classList.add('scale-100');
+        } else {
+          overlay?.classList.add('opacity-0');
+          ring?.classList.add('opacity-0');
+          badge?.classList.add('opacity-0', 'scale-75');
+          badge?.classList.remove('scale-100');
+        }
+      });
+
+      const count = selectedIndices.size;
+      if (selectionCount) selectionCount.textContent = String(count);
+
+      if (count > 0) {
+        selectionBar?.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+        selectionBar?.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+      } else {
+        selectionBar?.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+        selectionBar?.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+      }
+
+      updateWhatsAppLink();
+    }
+
+    function toggleCard(card) {
+      const index = card.dataset.index;
+      if (selectedIndices.has(index)) {
+        selectedIndices.delete(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      updateSelectionUI();
+    }
+
+    searchInput?.addEventListener('input', (event) => {
+      searchQuery = event.target.value;
+      filterCards();
+    });
+
+    genreButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        activeGenre = button.dataset.genre || 'all';
+        updateGenreStyles();
+        filterCards();
+      });
+    });
+
+    cards.forEach((card) => {
+      card.addEventListener('click', () => toggleCard(card));
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleCard(card);
+        }
+      });
+    });
+
+    updateSelectionUI();
+  })();
+</script>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+</style>

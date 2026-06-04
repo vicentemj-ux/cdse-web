@@ -1,0 +1,65 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  ogUrl?: string;
+  ogType?: string;
+  canonical?: string;
+}
+
+const SITE_URL = 'https://cdse.com.mx';
+
+const {
+  title,
+  description = 'CDSE - Catalogo interactivo de juegos digitales para Nintendo Switch en Los Mochis, Sinaloa.',
+  ogImage = `${SITE_URL}/og-landpage.png`,
+  ogImageAlt = 'CDSE - Catalogo de juegos digitales para Nintendo Switch',
+  ogUrl = SITE_URL,
+  ogType = 'website',
+  canonical = ogUrl,
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="CDSE - Centro de Soluciones Electronicas" />
+    <meta name="theme-color" content="#111820" />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="CDSE - Centro de Soluciones Electronicas" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_MX" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <link rel="apple-touch-icon" href="/apple.jpg" />
+
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen bg-[#111820] text-white">
+    <slot />
+  </body>
+</html>

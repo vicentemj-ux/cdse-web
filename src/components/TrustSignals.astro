@@ -10,25 +10,24 @@ const brands = [
 ];
 ---
 
-<!-- Brand Partners - Apple Store aesthetic -->
-<section class="bg-white py-24 px-6">
-  <div class="max-w-5xl mx-auto">
-    <div class="text-center mb-16">
-      <h2 class="text-3xl md:text-4xl font-semibold text-[#1d1d1f] tracking-tight">
+<section id="nosotros" class="bg-white px-6 py-24">
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-16 text-center">
+      <h2 class="text-3xl font-semibold tracking-tight text-[#1d1d1f] md:text-4xl">
         Marcas de Confianza
       </h2>
-      <p class="mt-4 text-lg text-[#86868b] max-w-2xl mx-auto">
-        Especialistas en reparación de las marcas más reconocidas del mundo.
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-[#86868b]">
+        Especialistas en reparacion de las marcas mas reconocidas del mundo.
       </p>
     </div>
 
-    <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16">
+    <div class="flex flex-wrap items-center justify-center gap-8 md:gap-16">
       {brands.map((brand) => (
-        <div class="flex justify-center items-center group transition-all duration-500">
+        <div class="group flex items-center justify-center transition-all duration-500">
           <img
             src={brand.src}
             alt={brand.name}
-            class="h-12 md:h-16 w-auto object-contain opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-105"
+            class="h-12 w-auto object-contain opacity-60 grayscale transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-100 md:h-16"
           />
         </div>
       ))}
@@ -36,67 +35,65 @@ const brands = [
   </div>
 </section>
 
-<!-- 16 Years Badge -->
-<section class="w-full py-20 px-4 bg-slate-50">
-  <div class="max-w-6xl mx-auto">
-    <div class="bg-gradient-to-r from-blue-600 to-teal-600 rounded-lg p-12 text-white text-center">
-      <div class="text-6xl font-bold mb-4">16 Años</div>
-      <h3 class="text-3xl font-bold mb-2">de Excelencia</h3>
+<section class="w-full bg-slate-50 px-4 py-20">
+  <div class="mx-auto max-w-6xl">
+    <div class="rounded-lg bg-gradient-to-r from-blue-600 to-teal-600 p-12 text-center text-white">
+      <div class="mb-4 text-6xl font-bold">16 Anos</div>
+      <h3 class="mb-2 text-3xl font-bold">de Excelencia</h3>
       <p class="text-xl opacity-90">
-        Sirviendo a la comunidad de Los Mochis con servicios de reparación confiables y profesionales
+        Sirviendo a la comunidad de Los Mochis con servicios de reparacion confiables y profesionales
       </p>
     </div>
   </div>
 </section>
 
-<!-- Testimonials -->
-<section class="w-full py-20 px-4 bg-slate-50">
-  <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-12">
-      <h2 class="text-4xl font-bold text-slate-900 mb-4">Testimonios de Clientes</h2>
+<section class="w-full bg-slate-50 px-4 py-20">
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-12 text-center">
+      <h2 class="mb-4 text-4xl font-bold text-slate-900">Testimonios de Clientes</h2>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div class="bg-white rounded-lg p-8 shadow-md border-l-4 border-blue-600">
-        <div class="flex gap-1 mb-4">
+    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+      <div class="rounded-lg border-l-4 border-blue-600 bg-white p-8 shadow-md">
+        <div class="mb-4 flex gap-1">
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
         </div>
-        <p class="text-slate-700 mb-4">
-          "¡Excelente servicio! Me repararon la pantalla del celular en solo 2 horas. Muy profesionales y precios justos. ¡Altamente recomendados!"
+        <p class="mb-4 text-slate-700">
+          "Excelente servicio. Me repararon la pantalla del celular en solo 2 horas. Muy profesionales y precios justos."
         </p>
-        <p class="font-semibold text-slate-900">María González</p>
+        <p class="font-semibold text-slate-900">Maria Gonzalez</p>
       </div>
 
-      <div class="bg-white rounded-lg p-8 shadow-md border-l-4 border-teal-600">
-        <div class="flex gap-1 mb-4">
+      <div class="rounded-lg border-l-4 border-teal-600 bg-white p-8 shadow-md">
+        <div class="mb-4 flex gap-1">
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
         </div>
-        <p class="text-slate-700 mb-4">
-          "Llevé mi laptop con el disco duro dañado y la dejaron como nueva. Excelentes técnicos y precios honestos."
+        <p class="mb-4 text-slate-700">
+          "Lleve mi laptop con el disco duro danado y la dejaron como nueva. Excelentes tecnicos y precios honestos."
         </p>
-        <p class="font-semibold text-slate-900">Carlos Rodríguez</p>
+        <p class="font-semibold text-slate-900">Carlos Rodriguez</p>
       </div>
 
-      <div class="bg-white rounded-lg p-8 shadow-md border-l-4 border-blue-500">
-        <div class="flex gap-1 mb-4">
+      <div class="rounded-lg border-l-4 border-blue-500 bg-white p-8 shadow-md">
+        <div class="mb-4 flex gap-1">
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
           <span class="text-yellow-400">★</span>
         </div>
-        <p class="text-slate-700 mb-4">
-          "Llevan años reparando las computadoras de nuestro negocio. Confiables, rápidos y honestos. ¡Gracias CDSE!"
+        <p class="mb-4 text-slate-700">
+          "Llevan anos reparando las computadoras de nuestro negocio. Confiables, rapidos y honestos."
         </p>
-        <p class="font-semibold text-slate-900">Jorge Sánchez</p>
+        <p class="font-semibold text-slate-900">Jorge Sanchez</p>
       </div>
     </div>
   </div>
