@@ -217,6 +217,14 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .sp-link-button { border: 0; padding: 0; color: var(--sp-blue); background: transparent; cursor: pointer; font: inherit; text-align: left; }
 .sp-inline-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
 .sp-inline-actions .sp-button { margin-top: 0; width: auto; }
+.sp-inline-actions .sp-button:disabled { cursor: not-allowed; opacity: .45; }
+.sp-quote-filters { display: flex; gap: 1rem; align-items: end; margin: 1.25rem 0; padding: 1rem; background: var(--sp-paper); border: 1px solid var(--sp-line); }
+.sp-quote-filters .sp-field:first-child { flex: 1; }
+.sp-quote-filters .sp-field { margin: 0; min-width: 12rem; }
+.sp-quote-filters input, .sp-quote-filters select { min-height: 2.6rem; }
+.sp-table-wrap td:last-child .sp-inline-actions { gap: .3rem; }
+.sp-table-wrap td:last-child .sp-inline-actions .sp-button { padding: .4rem .55rem; font-size: .68rem; }
+.sp-table-wrap td:last-child .sp-text-button { display: block; margin-top: .45rem; }
 .sp-quote-detail { display: flex; justify-content: space-between; gap: 1.5rem; align-items: end; margin: 0 0 1.5rem; border-top: 3px solid var(--sp-sun); padding: 1rem 0 1.2rem; }
 .sp-quote-detail h2 { margin: .35rem 0; font-family: "Newsreader", serif; font-size: 2rem; }
 .sp-quote-detail p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); }
@@ -346,6 +354,8 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-table-wrap--full { margin-inline: -1rem; padding-inline: 1rem; }
   .sp-quote-detail { align-items: start; flex-direction: column; }
   .sp-inline-actions { width: 100%; }
+  .sp-quote-filters { align-items: stretch; flex-direction: column; }
+  .sp-quote-filters .sp-field { min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

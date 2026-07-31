@@ -57,14 +57,14 @@ function printQuote(quote) {
   printable.document.close();
 }
 
-function QuoteActions({ quote }) {
+function QuoteActions({ quote, compact = false }) {
   const whatsappNumber = String(quote.solar_leads?.phone_e164 ?? '').replace(/\D/g, '');
   const shareText = quoteShareText(quote);
   const email = quote.solar_leads?.email ?? '';
   return <div className="sp-inline-actions">
-    <button type="button" className="sp-button sp-button--secondary" onClick={() => printQuote(quote)}>Descargar / imprimir PDF</button>
-    {whatsappNumber && <a className="sp-button sp-button--secondary" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer">Enviar por WhatsApp</a>}
-    <a className="sp-button sp-button--secondary" href={`mailto:${email}?subject=${encodeURIComponent(`Propuesta solar ${quote.folio}`)}&body=${encodeURIComponent(shareText)}`}>Enviar por correo</a>
+    <button type="button" className="sp-button sp-button--secondary" onClick={() => printQuote(quote)} title="Abrir el documento para guardarlo como PDF">{compact ? 'PDF' : 'Descargar PDF'}</button>
+    {whatsappNumber ? <a className="sp-button sp-button--secondary" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer">{compact ? 'WhatsApp' : 'Enviar por WhatsApp'}</a> : <button type="button" className="sp-button sp-button--secondary" disabled title="Agrega un WhatsApp al prospecto">WhatsApp</button>}
+    {email ? <a className="sp-button sp-button--secondary" href={`mailto:${email}?subject=${encodeURIComponent(`Propuesta solar ${quote.folio}`)}&body=${encodeURIComponent(shareText)}`}>{compact ? 'Correo' : 'Enviar por correo'}</a> : <button type="button" className="sp-button sp-button--secondary" disabled title="Agrega un correo al prospecto">Correo</button>}
   </div>;
 }
 
@@ -662,7 +662,14 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
 function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const selectedQuote = data.quotes.find((quote) => quote.id === openQuoteId) ?? null;
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleQuotes = data.quotes.filter((quote) => {
+    const haystack = [quote.folio, quote.solar_leads?.name, quote.solar_leads?.phone_e164, quote.solar_leads?.email].filter(Boolean).join(' ').toLowerCase();
+    return (!normalizedSearch || haystack.includes(normalizedSearch)) && (statusFilter === 'all' || quote.status === statusFilter);
+  });
 
   async function changeStatus(id, status) {
     let lostReason = null;
@@ -689,6 +696,10 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
     <section className="sp-view">
       <header className="sp-view-header"><div><p className="sp-section-number">PIPELINE / COTIZACIONES</p><h1>Seguimiento y cierre.</h1></div></header>
       {message && <p className="sp-form-error">{message}</p>}
+      <div className="sp-quote-filters">
+        <label className="sp-field"><span>Buscar</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Folio, cliente o teléfono" /></label>
+        <label className="sp-field"><span>Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos</option>{STATUS_OPTIONS.map((status) => <option value={status} key={status}>{STATUS_LABELS[status]}</option>)}</select></label>
+      </div>
       {selectedQuote && <article id="quote-detail" className="sp-quote-detail">
         <div><p className="sp-section-number">COTIZACIÓN SELECCIONADA</p><h2>{selectedQuote.folio}</h2><p>{selectedQuote.solar_leads?.name} · {selectedQuote.panel_count} paneles de {selectedQuote.solar_modules?.watts} W · {money.format(Number(selectedQuote.total_mxn ?? 0))}</p></div>
         <QuoteActions quote={selectedQuote} />
@@ -698,7 +709,7 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
           <table>
             <thead><tr><th>Folio</th><th>Cliente</th><th>Vendedor</th><th>Sistema</th><th>Total</th><th>Comisión</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
-              {data.quotes.map((quote) => (
+              {visibleQuotes.map((quote) => (
                 <tr key={quote.id}>
                     <td><button type="button" className="sp-link-button sp-folio" onClick={() => onOpenQuote(quote.id)}>{quote.folio}</button><small>{new Date(quote.created_at).toLocaleDateString('es-MX')}</small></td>
                   <td><strong>{quote.solar_leads?.name}</strong><small>{quote.solar_leads?.phone_e164}</small></td>
@@ -725,13 +736,13 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
                         .map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
                     </select>
                   </td>
-                  <td><button type="button" className="sp-text-button" onClick={() => onOpenQuote(quote.id)}>Abrir</button></td>
+                  <td><QuoteActions quote={quote} compact /><button type="button" className="sp-text-button" onClick={() => onOpenQuote(quote.id)}>Seleccionar</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : <EmptyState title="No hay cotizaciones todavía" detail="Los folios creados por vendedores aparecerán aquí con su comisión y estado." />}
+      ) : <EmptyState title={data.quotes.length ? 'No hay coincidencias' : 'No hay cotizaciones todavía'} detail={data.quotes.length ? 'Prueba con otro folio, cliente o estado.' : 'Los folios creados por vendedores aparecerán aquí con su comisión y estado.'} />}
     </section>
   );
 }
