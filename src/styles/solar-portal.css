@@ -214,6 +214,12 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .sp-next p:not(.sp-section-number) { color: var(--sp-muted); line-height: 1.65; }
 
 .sp-table-wrap { overflow-x: auto; border-top: 1px solid var(--sp-line); }
+.sp-link-button { border: 0; padding: 0; color: var(--sp-blue); background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.sp-inline-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.sp-inline-actions .sp-button { margin-top: 0; width: auto; }
+.sp-quote-detail { display: flex; justify-content: space-between; gap: 1.5rem; align-items: end; margin: 0 0 1.5rem; border-top: 3px solid var(--sp-sun); padding: 1rem 0 1.2rem; }
+.sp-quote-detail h2 { margin: .35rem 0; font-family: "Newsreader", serif; font-size: 2rem; }
+.sp-quote-detail p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); }
 .sp-table-wrap--full { border-top-color: var(--sp-ink); }
 table { width: 100%; border-collapse: collapse; font-size: .84rem; }
 th { padding: .8rem .7rem; color: var(--sp-muted); text-align: left; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; }
@@ -274,6 +280,7 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-catalog-row strong, .sp-catalog-row span, .sp-seller-row strong, .sp-seller-row small { display: block; }
 .sp-catalog-row span, .sp-seller-row small { margin-top: .25rem; color: var(--sp-muted); font-size: .73rem; }
 .sp-catalog-row b { font-family: "Newsreader", serif; font-size: 1.35rem; }
+.sp-catalog-row .sp-text-button { flex: 0 0 auto; }
 .sp-admin-form { align-self: start; display: grid; gap: 1rem; border-top: 3px solid var(--sp-sun); padding-top: 1rem; }
 .sp-admin-form h2 { margin: 0 0 .5rem; font-family: "Newsreader", serif; font-size: 2rem; }
 .sp-seller-row > div { display: flex; align-items: center; gap: .7rem; }
@@ -337,6 +344,8 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-period-row { grid-template-columns: 1.7rem 1fr 1fr 1.5rem; gap: .35rem; }
   .sp-admin-grid { grid-template-columns: 1fr; }
   .sp-table-wrap--full { margin-inline: -1rem; padding-inline: 1rem; }
+  .sp-quote-detail { align-items: start; flex-direction: column; }
+  .sp-inline-actions { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
