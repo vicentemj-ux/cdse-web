@@ -95,9 +95,13 @@ function parseCustomerName(text) {
     text.match(
       /Ciudad\s+de\s+M[eé]xico\.?\s+([A-ZÁÉÍÓÚÑ'’-]{2,}(?:\s+[A-ZÁÉÍÓÚÑ'’-]{2,}){1,5})(?=\s+\d{1,5}\s)/,
     );
-  if (!headerMatch) return null;
+  const fallbackMatch =
+    text.match(
+      /(?:^|\n)\s*([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ'’-]{2,}(?:\s+[A-ZÁÉÍÓÚÑ](?:[A-ZÁÉÍÓÚÑ'’-]{1,})?){1,5})\s*\n\s*(?:AND|AV\.?|CALLE|EJ\.?|INF\.?|BLVD\.?|COL\.?)/i,
+    );
+  if (!headerMatch && !fallbackMatch) return null;
 
-  const candidate = headerMatch[1]
+  const candidate = (headerMatch?.[1] ?? fallbackMatch?.[1])
     .replace(/\s+/g, ' ')
     .trim();
   if (

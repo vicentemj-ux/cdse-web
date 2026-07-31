@@ -81,3 +81,14 @@ test('reads an inline customer name and a noisy PDF text layer', () => {
   assert.equal(result.periods[0].kwh, 817);
   assert.equal(result.annualConsumptionKwh, 2819);
 });
+
+test('reads the CFE header name when OCR places it above the address', () => {
+  const result = parseCfeReceiptText(`
+CONTRERAS G L JAVIER
+EJ MATACAHUIY EL AGUILA AZTECA
+NO. DE SERVICIO:538910105151
+`);
+
+  assert.equal(result.customerName, 'Contreras G L Javier');
+  assert.equal(result.serviceNumber, '538910105151');
+});
