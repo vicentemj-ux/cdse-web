@@ -6,6 +6,9 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      dedupe: ['tslib', '@supabase/supabase-js'],
+    },
   },
   output: 'static'
 });
