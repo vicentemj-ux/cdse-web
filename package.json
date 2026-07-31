@@ -17,7 +17,8 @@
     "astro": "^7.1.6",
     "pdfjs-dist": "5.4.149",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
