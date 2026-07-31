@@ -6,6 +6,11 @@ import { parseCfeReceiptText } from '../src/lib/solar/cfe-receipt-parser.mjs';
 const RECEIPT_TEXT = `
 TOTAL A PAGAR:
 $3,174
+Comisión Federal de Electricidad
+Av. Paseo de la Reforma 164, Col. Juárez,
+Ciudad de México.
+PERSONA CLIENTE DE PRUEBA
+CALLE DE PRUEBA 100
 NO. DE SERVICIO:123456789012
 RMU:81304 00-00-00 XAXX-010101 000 CFE
 CUENTA:00AA00A000000000
@@ -29,6 +34,7 @@ del 07 MAR 25 al 08 MAY 25 107 $622.00 $622.00
 test('extracts the rolling twelve-month basis from a bimonthly CFE receipt', () => {
   const result = parseCfeReceiptText(RECEIPT_TEXT);
 
+  assert.equal(result.customerName, 'Persona Cliente De Prueba');
   assert.equal(result.tariffCode, 'PDBT');
   assert.equal(result.serviceNumber, '123456789012');
   assert.equal(result.meterNumber, 'TEST00');
@@ -57,4 +63,21 @@ test('warns when only a partial history is available', () => {
 
   assert.equal(result.confidence, 'medium');
   assert.ok(result.warnings.includes('INCOMPLETE_TWELVE_MONTH_HISTORY'));
+});
+
+test('reads an inline customer name and a noisy PDF text layer', () => {
+  const noisyText = RECEIPT_TEXT
+    .replace(
+      'Ciudad de México.\nPERSONA CLIENTE DE PRUEBA\nCALLE DE PRUEBA 100',
+      'Ciudad de México. PERSONA CLIENTE DE PRUEBA 100 DE MAYO',
+    )
+    .replace(
+      'Energía (kWh) 13,799 12,982 817',
+      'Energía (kWh) texto de impresión 000003174 -1- 13,799 12,982 817 Suministro',
+    );
+  const result = parseCfeReceiptText(noisyText);
+
+  assert.equal(result.customerName, 'Persona Cliente De Prueba');
+  assert.equal(result.periods[0].kwh, 817);
+  assert.equal(result.annualConsumptionKwh, 2819);
 });

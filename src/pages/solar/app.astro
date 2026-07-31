@@ -1,0 +1,29 @@
+---
+import SolarPortal from '../../components/solar/portal/SolarPortal.jsx';
+import '../../styles/solar-portal.css';
+
+const title = 'Portal comercial solar | CDSE';
+const description = 'Acceso privado para cotizaciones, vendedores y seguimiento comercial solar de CDSE.';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0a2741" />
+    <link rel="icon" href="/favicon.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Newsreader:opsz,wght@6..72,500..700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body>
+    <SolarPortal client:load />
+  </body>
+</html>

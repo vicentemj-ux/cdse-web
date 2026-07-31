@@ -89,13 +89,41 @@ function inferPeriodicity(periods) {
   return 'unknown';
 }
 
+function parseCustomerName(text) {
+  const headerMatch =
+    text.match(/Ciudad\s+de\s+M[eé]xico\.?\s*\n\s*([^\n]{3,120})/i) ??
+    text.match(
+      /Ciudad\s+de\s+M[eé]xico\.?\s+([A-ZÁÉÍÓÚÑ'’-]{2,}(?:\s+[A-ZÁÉÍÓÚÑ'’-]{2,}){1,5})(?=\s+\d{1,5}\s)/,
+    );
+  if (!headerMatch) return null;
+
+  const candidate = headerMatch[1]
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (
+    !candidate ||
+    /\b(CFE|COMISI[ÓO]N|CALLE|AV\.?|COL\.?|C\.?P\.?|RFC)\b/i.test(candidate) ||
+    /\d{3,}/.test(candidate)
+  ) {
+    return null;
+  }
+
+  return candidate
+    .toLocaleLowerCase('es-MX')
+    .replace(/(^|[\s'-])([\p{L}])/gu, (_, separator, letter) =>
+      `${separator}${letter.toLocaleUpperCase('es-MX')}`,
+    );
+}
+
 function parseCurrentPeriod(text) {
   const periodMatch = text.match(
     /PERIODO\s+FACTURADO:\s*(\d{1,2}\s+[A-ZÁÉÍÓÚ]{3}\s+\d{2,4})\s*-\s*(\d{1,2}\s+[A-ZÁÉÍÓÚ]{3}\s+\d{2,4})/i,
   );
-  const energyMatch = text.match(
-    /Energ[ií]a\s*\(kWh\)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)/i,
-  );
+  const energyMatch =
+    text.match(/Energ[ií]a\s*\(kWh\)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)/i) ??
+    text.match(
+      /Energ[ií]a\s*\(kWh\)[\s\S]{0,700}?-1-\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)\s+Suministro/i,
+    );
   const invoiceMatch = text.match(/Fac\.\s*del\s*Periodo\s+\$?\s*([\d,.]+)/i);
 
   if (!periodMatch || !energyMatch) return null;
@@ -152,6 +180,7 @@ export function parseCfeReceiptText(rawText) {
   const text = normalizeText(rawText);
   const warnings = [];
 
+  const customerName = parseCustomerName(text);
   const serviceNumber =
     text.match(/NO\.\s*DE\s*SERVICIO:\s*(\d{10,})/i)?.[1] ?? null;
   const rmu = text.match(/RMU:\s*([A-Z0-9 -]{10,}?)(?=\s*CUENTA:|\n)/i)?.[1]?.trim() ?? null;
@@ -200,6 +229,7 @@ export function parseCfeReceiptText(rawText) {
 
   return {
     documentType: 'cfe_receipt',
+    customerName,
     serviceNumber,
     rmu,
     meterNumber,

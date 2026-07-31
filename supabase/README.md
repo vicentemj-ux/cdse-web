@@ -35,3 +35,30 @@ La clave `service_role` sólo pertenece en secretos de servidor.
 - semilla de zonas, equipos y configuración aprobada;
 - generación de PDF;
 - notificación al equipo de ventas.
+
+## Portal privado de ventas
+
+La migración `202607310001_solar_sales_portal.sql` agrega:
+
+- perfiles con roles `admin` y `seller`;
+- propiedad del lead, recibo y cotización por vendedor;
+- comisión individual congelada en cada folio;
+- precios instalados por panel, promociones y paquetes;
+- almacenamiento privado de recibos;
+- cálculo y persistencia atómica desde `seller_create_solar_quote`;
+- actualización auditada de estados con `set_solar_quote_status`.
+
+El portal vive en `/solar/app`. Para activarlo se requieren
+`PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en Vercel.
+
+Después de enlazar el proyecto:
+
+```bash
+supabase db push
+supabase functions deploy create-solar-quote
+supabase functions deploy manage-solar-seller
+```
+
+La primera cuenta de Auth se convierte una sola vez en administrador mediante
+el botón de inicialización del portal. Los vendedores posteriores se crean
+desde la sección **Vendedores**.

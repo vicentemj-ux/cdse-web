@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { calculatePanelRecommendation } from '../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../lib/solar/cfe-receipt-parser.mjs';
+import { extractPdfText } from '../../lib/solar/pdf-text.js';
 
 const QUOTE_ENDPOINT = import.meta.env.PUBLIC_SOLAR_QUOTE_ENDPOINT;
 const CDSE_WHATSAPP = '526681774845';
@@ -25,26 +26,6 @@ const TARIFFS = [
 ];
 
 const createPeriod = () => ({ kwh: '', amountMxn: '' });
-
-async function extractPdfText(file) {
-  const [{ getDocument, GlobalWorkerOptions }, { default: workerUrl }] = await Promise.all([
-    import('pdfjs-dist/legacy/build/pdf.mjs'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
-  ]);
-  GlobalWorkerOptions.workerSrc = workerUrl;
-
-  const loadingTask = getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
-  const document = await loadingTask.promise;
-  const pages = [];
-
-  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-    const page = await document.getPage(pageNumber);
-    const content = await page.getTextContent();
-    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
-  }
-
-  return pages.join('\n');
-}
 
 function normalizedTariff(tariffCode) {
   if (!tariffCode) return null;
@@ -244,6 +225,7 @@ export default function SolarQuoteWizard() {
       );
       setForm((current) => ({
         ...current,
+        name: current.name || extracted.customerName || '',
         tariffCode: normalizedTariff(extracted.tariffCode) ?? current.tariffCode,
         billingFrequency:
           extracted.periodicity === 'monthly' ? 'monthly' : 'bimonthly',
