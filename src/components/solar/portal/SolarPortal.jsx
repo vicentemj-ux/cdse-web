@@ -142,11 +142,28 @@ function SetupRequired() {
 
 function Bootstrap({ session, onReady }) {
   const [name, setName] = useState(session.user.user_metadata?.full_name ?? '');
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
 
   async function bootstrap() {
+    if (password.length < 8) {
+      return setMessage('La contraseña debe tener al menos 8 caracteres.');
+    }
+    if (password !== passwordConfirmation) {
+      return setMessage('Las contraseñas no coinciden.');
+    }
+    setBusy(true);
+    setMessage('');
     const client = getSupabaseClient();
+    const { error: passwordError } = await client.auth.updateUser({ password });
+    if (passwordError) {
+      setBusy(false);
+      return setMessage(errorMessage(passwordError));
+    }
     const { error } = await client.rpc('bootstrap_solar_admin', { p_full_name: name });
+    setBusy(false);
     if (error) return setMessage(errorMessage(error));
     onReady();
   }
@@ -161,9 +178,29 @@ function Bootstrap({ session, onReady }) {
         <span>Nombre del administrador</span>
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
+      <label className="sp-field">
+        <span>Define tu contraseña</span>
+        <input
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
+      </label>
+      <label className="sp-field">
+        <span>Confirma tu contraseña</span>
+        <input
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          value={passwordConfirmation}
+          onChange={(event) => setPasswordConfirmation(event.target.value)}
+        />
+      </label>
       {message && <p className="sp-form-error">{message}</p>}
-      <button className="sp-button sp-button--primary" onClick={bootstrap} disabled={name.trim().length < 2}>
-        Inicializar portal
+      <button className="sp-button sp-button--primary" onClick={bootstrap} disabled={busy || name.trim().length < 2 || password.length < 8 || password !== passwordConfirmation}>
+        {busy ? 'Guardando acceso…' : 'Inicializar portal'}
       </button>
     </main>
   );
