@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { calculatePanelRecommendation } from '../../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
 import { extractPdfText } from '../../../lib/solar/pdf-text.js';
+import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import {
   getSupabaseClient,
   getSupabaseFunctionsUrl,
@@ -83,7 +84,7 @@ function QuoteActions({ quote, compact = false }) {
   const shareText = quoteShareText(quote);
   const email = quote.solar_leads?.email ?? '';
   return <div className="sp-inline-actions">
-    <button type="button" className="sp-button sp-button--secondary" onClick={() => printQuote(quote)} title="Abrir el documento para guardarlo como PDF">{compact ? 'PDF' : 'Descargar PDF'}</button>
+    <button type="button" className="sp-button sp-button--secondary" onClick={() => downloadSolarQuotePdf(quote).catch((error) => { console.error(error); window.alert('No fue posible generar el PDF. Intenta nuevamente.'); })} title="Descargar la propuesta en PDF">{compact ? 'PDF' : 'Descargar PDF'}</button>
     {whatsappNumber ? <a className="sp-button sp-button--secondary" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer">{compact ? 'WhatsApp' : 'Enviar por WhatsApp'}</a> : <button type="button" className="sp-button sp-button--secondary" disabled title="Agrega un WhatsApp al prospecto">WhatsApp</button>}
     {email ? <a className="sp-button sp-button--secondary" href={`mailto:${email}?subject=${encodeURIComponent(`Propuesta solar ${quote.folio}`)}&body=${encodeURIComponent(shareText)}`}>{compact ? 'Correo' : 'Enviar por correo'}</a> : <button type="button" className="sp-button sp-button--secondary" disabled title="Agrega un correo al prospecto">Correo</button>}
   </div>;
@@ -559,8 +560,22 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
       }
       setResult({
         ...quoteResult,
-        solar_leads: { name: form.name, phone_e164: phoneE164, email: form.email },
+        created_at: new Date().toISOString(),
+        solar_leads: { name: form.name, phone_e164: phoneE164, email: form.email, municipality: form.municipality },
         solar_modules: selectedModule,
+        input_snapshot: { annualConsumptionKwh: preview?.annualConsumptionKwh, tariffCode: form.tariffCode },
+        solar_receipts: {
+          tariff_code: form.tariffCode,
+          service_number: form.serviceNumber,
+          solar_consumption_periods: validPeriods.map((period, index) => ({
+            sequence: index + 1,
+            period_start: period.periodStart || null,
+            period_end: period.periodEnd || null,
+            covered_months: Number(period.coveredMonths),
+            kwh: Number(period.kwh),
+            amount_mxn: Number(period.amountMxn || 0),
+          })),
+        },
         result_snapshot: {
           ...(preview ?? {}),
           ...(quoteResult.result_snapshot ?? {}),
@@ -1032,7 +1047,7 @@ export default function SolarPortal() {
 
     const [quotes, leads, receipts, modules, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
-        client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts)').order('created_at', { ascending: false }),
+        client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
         client.from('solar_modules').select('*').order('watts'),

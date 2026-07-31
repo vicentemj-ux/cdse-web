@@ -24,4 +24,5 @@ yarn-error.log
 # Build
 .vercel
 tmp/
+output/pdf/
 supabase/.temp/
