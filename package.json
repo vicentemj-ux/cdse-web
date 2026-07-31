@@ -7,12 +7,14 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "test": "node --test",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
     "@astrojs/tailwind": "^6.0.2",
     "astro": "^5.5.0",
+    "pdfjs-dist": "5.4.149",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

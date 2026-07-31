@@ -1,0 +1,359 @@
+---
+import SolarQuoteWizard from '../components/solar/SolarQuoteWizard.jsx';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/solar.css';
+
+const canonical = 'https://cdse.com.mx/solar';
+const title = 'Paneles solares en Los Mochis | Calcula cuántos necesitas | CDSE';
+const description =
+  'Sube tu recibo CFE y recibe una estimación de cuántos paneles solares necesita tu casa o negocio en Los Mochis y alrededores.';
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Service',
+      '@id': `${canonical}#service`,
+      name: 'Instalación de paneles solares en Los Mochis',
+      serviceType: 'Dimensionamiento e instalación de sistemas solares fotovoltaicos',
+      provider: {
+        '@type': 'LocalBusiness',
+        '@id': 'https://cdse.com.mx/#business',
+        name: 'CDSE - Centro de Soluciones Electrónicas',
+        url: 'https://cdse.com.mx',
+        telephone: '+52-668-177-4845',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Los Mochis',
+          addressRegion: 'Sinaloa',
+          addressCountry: 'MX',
+        },
+      },
+      areaServed: [
+        { '@type': 'City', name: 'Los Mochis' },
+        { '@type': 'Place', name: 'Topolobampo' },
+        { '@type': 'Place', name: 'Juan José Ríos' },
+        { '@type': 'Place', name: 'El Carrizo' },
+      ],
+      description,
+      url: canonical,
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: '¿Cómo calculan cuántos paneles solares necesito?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'CDSE utiliza el historial de consumo del recibo CFE, la periodicidad, la potencia del panel y la zona del proyecto. La recomendación preliminar se valida después con el espacio, orientación, sombras y condiciones eléctricas del inmueble.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Puedo cotizar si no sé cuál es mi tarifa CFE?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Sí. Puedes seleccionar que no conoces la tarifa y compartir una foto o PDF del recibo. Un asesor de CDSE revisará la información antes de preparar una propuesta.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿La estimación muestra un precio?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'La primera estimación se concentra en la cantidad y potencia de paneles. CDSE revisa el recibo y las condiciones del inmueble antes de entregar una propuesta económica.',
+          },
+        },
+      ],
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogTitle="¿Cuántos paneles solares necesita tu recibo?"
+  ogDescription="Obtén una estimación para tu casa o negocio en Los Mochis. Sube tu recibo CFE y CDSE revisa el proyecto contigo."
+  ogImage="https://cdse.com.mx/og-solar-los-mochis.webp"
+  ogImageAlt="Paneles solares instalados en una casa de Los Mochis, Sinaloa"
+  ogImageType="image/webp"
+  ogImageWidth={1200}
+  ogImageHeight={630}
+  ogUrl={canonical}
+  hideSiteChrome={true}
+  fontSet="solar"
+>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+  <div class="solar-page">
+    <a class="solar-skip-link" href="#contenido-solar">Saltar al contenido</a>
+
+    <header class="solar-header">
+      <div class="solar-shell solar-header__inner">
+        <a class="solar-brand" href="/" aria-label="CDSE, página de inicio">
+          <img src="/header.png" alt="CDSE" width="394" height="90" />
+          <span>Solar</span>
+        </a>
+        <nav class="solar-nav" aria-label="Navegación solar">
+          <a href="#como-funciona">Cómo funciona</a>
+          <a href="#confianza">Por qué CDSE</a>
+          <a href="#preguntas">Preguntas</a>
+        </nav>
+        <a class="solar-header__cta" href="#cotizador">
+          Analizar mi recibo
+          <span aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </header>
+
+    <main id="contenido-solar">
+      <section class="solar-hero">
+        <div class="solar-hero__image" aria-hidden="true">
+          <img
+            src="/solar-hero-los-mochis.webp"
+            alt=""
+            width="1536"
+            height="1024"
+            fetchpriority="high"
+          />
+        </div>
+        <div class="solar-shell solar-hero__grid">
+          <div class="solar-hero__copy">
+            <p class="solar-kicker">
+              <span></span>
+              Energía solar para Los Mochis
+            </p>
+            <h1>
+              Tu recibo ya dice
+              <em>cuántos paneles necesitas.</em>
+            </h1>
+            <p class="solar-hero__lead">
+              Compártenos tu consumo y calculamos una recomendación inicial para tu
+              casa o negocio. Sin paquetes inventados ni precios antes de entender
+              tu proyecto.
+            </p>
+            <div class="solar-hero__actions">
+              <a class="solar-button solar-button--primary" href="#cotizador">
+                Subir mi recibo CFE
+                <span aria-hidden="true">→</span>
+              </a>
+              <a class="solar-inline-link" href="#como-funciona">
+                Ver cómo calculamos
+              </a>
+            </div>
+            <ul class="solar-hero__assurances" aria-label="Características del diagnóstico">
+              <li>
+                <span aria-hidden="true">✓</span>
+                Casas y negocios
+              </li>
+              <li>
+                <span aria-hidden="true">✓</span>
+                Foto o PDF
+              </li>
+              <li>
+                <span aria-hidden="true">✓</span>
+                Revisión local
+              </li>
+            </ul>
+          </div>
+          <div class="solar-hero__spacer"></div>
+        </div>
+      </section>
+
+      <section class="solar-quote-section" id="cotizador">
+        <div class="solar-shell solar-quote-layout">
+          <aside class="solar-quote-context">
+            <p class="solar-section-index">01 — Diagnóstico</p>
+            <h2>Convierte tu historial CFE en una recomendación clara.</h2>
+            <p>
+              Evaluamos la zona, el consumo y la potencia del panel para estimar
+              cuántas piezas puede requerir el sistema.
+            </p>
+            <div class="solar-data-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3 5 6v5c0 4.5 2.9 8.7 7 10 4.1-1.3 7-5.5 7-10V6l-7-3Z" />
+                <path d="m9.5 12 1.7 1.7 3.6-4" />
+              </svg>
+              <div>
+                <strong>Tu recibo se trata como información privada.</strong>
+                <p>Se usa únicamente para calcular y dar seguimiento a tu solicitud.</p>
+              </div>
+            </div>
+          </aside>
+          <SolarQuoteWizard client:load />
+        </div>
+      </section>
+
+      <section class="solar-process" id="como-funciona">
+        <div class="solar-shell">
+          <div class="solar-section-heading">
+            <p class="solar-section-index">02 — Cómo funciona</p>
+            <h2>De un recibo a una conversación técnica.</h2>
+            <p>
+              La calculadora orienta. El equipo de CDSE valida antes de recomendar
+              una instalación.
+            </p>
+          </div>
+          <ol class="solar-process__steps">
+            <li>
+              <span>01</span>
+              <div>
+                <h3>Comparte tu consumo</h3>
+                <p>Sube el recibo y confirma los periodos que aparecen en el historial.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <h3>Calculamos por zona</h3>
+                <p>
+                  Normalizamos el consumo anual y evaluamos paneles de 550, 590 o
+                  630 W.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <h3>Validamos contigo</h3>
+                <p>
+                  Revisamos techo, sombras, orientación y condiciones eléctricas por
+                  WhatsApp o visita.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="solar-trust" id="confianza">
+        <div class="solar-shell solar-trust__grid">
+          <div class="solar-trust__statement">
+            <p class="solar-section-index">03 — Por qué CDSE</p>
+            <blockquote>
+              “No queremos venderte un paquete. Queremos entender qué sistema tiene
+              sentido para tu consumo.”
+            </blockquote>
+          </div>
+          <div class="solar-trust__reasons">
+            <div>
+              <span aria-hidden="true">A</span>
+              <h3>Recomendación trazable</h3>
+              <p>
+                Conservamos periodos, zona, potencia y supuestos usados en cada
+                cálculo.
+              </p>
+            </div>
+            <div>
+              <span aria-hidden="true">B</span>
+              <h3>Sin precisión falsa</h3>
+              <p>
+                La primera cifra es preliminar. El proyecto se confirma después de
+                revisar el inmueble.
+              </p>
+            </div>
+            <div>
+              <span aria-hidden="true">C</span>
+              <h3>Atención en la región</h3>
+              <p>
+                Trabajamos desde Los Mochis para proyectos cercanos en el norte de
+                Sinaloa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="solar-faq" id="preguntas">
+        <div class="solar-shell solar-faq__grid">
+          <div class="solar-section-heading">
+            <p class="solar-section-index">04 — Preguntas</p>
+            <h2>Antes de subir tu recibo.</h2>
+          </div>
+          <div class="solar-faq__list">
+            <details>
+              <summary>¿Cómo calculan cuántos paneles necesito?</summary>
+              <p>
+                Usamos el historial de kWh, la periodicidad, la zona, la cobertura
+                objetivo y la potencia del panel. Después verificamos espacio,
+                orientación, sombras y condiciones eléctricas.
+              </p>
+            </details>
+            <details>
+              <summary>¿Qué parte del recibo debo capturar?</summary>
+              <p>
+                La tarifa y el historial de consumo con kWh y monto de cada periodo.
+                Puedes ocultar datos que no sean necesarios; sólo pedimos los últimos
+                cuatro dígitos del número de servicio si hacen falta para identificarlo.
+              </p>
+            </details>
+            <details>
+              <summary>¿Puedo solicitarlo para un negocio?</summary>
+              <p>
+                Sí. PDBT y GDBT pueden recibir una estimación inicial. Las tarifas con
+                demanda o periodos horarios requieren una revisión adicional antes de
+                calcular ahorro.
+              </p>
+            </details>
+            <details>
+              <summary>¿La estimación incluye precio?</summary>
+              <p>
+                En esta etapa mostramos la cantidad y potencia sugerida. El precio se
+                prepara después de revisar el recibo y las condiciones reales del
+                proyecto.
+              </p>
+            </details>
+            <details>
+              <summary>¿La cantidad de paneles es definitiva?</summary>
+              <p>
+                No. Es una recomendación preliminar. La cantidad final puede cambiar
+                por sombras, superficie disponible, orientación, estructura o
+                requerimientos del inversor.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="solar-final-cta">
+        <div class="solar-shell solar-final-cta__inner">
+          <div>
+            <p class="solar-section-index">Empieza con información real</p>
+            <h2>Tu próximo paso cabe en una foto.</h2>
+          </div>
+          <a class="solar-button solar-button--light" href="#cotizador">
+            Analizar mi recibo
+            <span aria-hidden="true">↑</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="solar-footer">
+      <div class="solar-shell solar-footer__inner">
+        <a class="solar-brand solar-brand--footer" href="/">
+          <img src="/header.png" alt="CDSE" width="394" height="90" loading="lazy" />
+          <span>Solar</span>
+        </a>
+        <p>Dimensionamiento e instalación solar en Los Mochis y alrededores.</p>
+        <div class="solar-footer__links">
+          <a href="/privacidad">Privacidad</a>
+          <a href="tel:+526681774845">668 177 4845</a>
+          <a
+            href="https://wa.me/526681774845?text=Hola%2C%20quiero%20información%20sobre%20paneles%20solares"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <a class="solar-mobile-cta" href="#cotizador">
+      Analizar mi recibo
+      <span aria-hidden="true">↑</span>
+    </a>
+  </div>
+</BaseLayout>
