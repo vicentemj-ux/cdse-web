@@ -6,6 +6,7 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    envPrefix: ['PUBLIC_', 'NEXT_PUBLIC_'],
     resolve: {
       dedupe: ['tslib', '@supabase/supabase-js'],
     },

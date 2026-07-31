@@ -185,6 +185,10 @@ begin
     raise exception 'AUTH_REQUIRED';
   end if;
 
+  -- Prevent two first users from bootstrapping themselves as administrators
+  -- at the same time.
+  lock table public.solar_profiles in exclusive mode;
+
   if exists (select 1 from public.solar_profiles) then
     raise exception 'ADMIN_ALREADY_BOOTSTRAPPED';
   end if;
@@ -515,7 +519,9 @@ begin
   end if;
 
   v_total := v_subtotal - v_discount;
-  v_commission := round(v_total * (v_profile.commission_rate / 100), 2);
+  -- The rate is snapshotted now, but the payable amount is only created when
+  -- an administrator confirms the sale.
+  v_commission := null;
 
   insert into public.solar_leads (
     name, phone_e164, email, municipality, postal_code,
@@ -624,7 +630,7 @@ begin
     v_subtotal,
     v_discount,
     v_profile.commission_rate,
-    v_commission
+    null
   )
   returning id, public.solar_quotes.folio into v_quote_id, v_folio;
 
@@ -659,6 +665,7 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_quote public.solar_quotes;
+  v_is_admin boolean := public.is_solar_admin();
 begin
   select * into v_quote
   from public.solar_quotes
@@ -668,15 +675,31 @@ begin
     raise exception 'QUOTE_NOT_FOUND';
   end if;
 
-  if not public.is_solar_admin()
+  if not v_is_admin
     and (v_quote.seller_user_id <> v_uid or not public.is_active_solar_seller()) then
     raise exception 'NOT_AUTHORIZED';
+  end if;
+
+  if p_status in ('aceptada', 'rechazada') and not v_is_admin then
+    raise exception 'ADMIN_REQUIRED_FOR_FINAL_STATUS';
+  end if;
+
+  if p_status = 'rechazada' and nullif(trim(p_lost_reason), '') is null then
+    raise exception 'LOST_REASON_REQUIRED';
   end if;
 
   update public.solar_quotes
   set
     status = p_status,
-    sold_at = case when p_status = 'aceptada' then coalesce(sold_at, now()) else sold_at end
+    sold_at = case
+      when p_status = 'aceptada' then coalesce(sold_at, now())
+      else null
+    end,
+    commission_amount_mxn = case
+      when p_status = 'aceptada'
+        then round(coalesce(total_mxn, 0) * (coalesce(commission_rate, 0) / 100), 2)
+      else null
+    end
   where id = p_quote_id
   returning * into v_quote;
 

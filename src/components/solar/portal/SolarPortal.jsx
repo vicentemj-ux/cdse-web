@@ -132,8 +132,8 @@ function SetupRequired() {
       <p className="sp-kicker">Conexión pendiente</p>
       <h1>El portal está listo; falta enlazar el proyecto Supabase.</h1>
       <p>
-        Configura <code>PUBLIC_SUPABASE_URL</code> y <code>PUBLIC_SUPABASE_ANON_KEY</code>
-        en Vercel para activar acceso, almacenamiento y control comercial.
+        Conecta el proyecto Supabase con Vercel o configura las variables públicas
+        para activar acceso, almacenamiento y control comercial.
       </p>
       <a className="sp-button sp-button--secondary" href="/solar">Volver a Solar</a>
     </main>
@@ -533,17 +533,25 @@ function QuoteForm({ data, session, onCreated }) {
   );
 }
 
-function Quotes({ data, refresh }) {
+function Quotes({ data, refresh, isAdmin }) {
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
 
   async function changeStatus(id, status) {
+    let lostReason = null;
+    if (status === 'rechazada') {
+      lostReason = window.prompt('Motivo por el que se perdió la oportunidad:')?.trim();
+      if (!lostReason) return;
+    }
+    if (status === 'aceptada' && !window.confirm('¿Confirmar la venta y registrar la comisión del vendedor?')) {
+      return;
+    }
     setBusyId(id);
     setMessage('');
     const { error } = await getSupabaseClient().rpc('set_solar_quote_status', {
       p_quote_id: id,
       p_status: status,
-      p_lost_reason: null,
+      p_lost_reason: lostReason,
     });
     setBusyId('');
     if (error) return setMessage(errorMessage(error));
@@ -566,15 +574,24 @@ function Quotes({ data, refresh }) {
                   <td>{data.profileMap[quote.seller_user_id]?.full_name ?? 'Sin asignar'}</td>
                   <td>{quote.panel_count ?? '—'} × {quote.solar_modules?.watts ?? '—'} W</td>
                   <td>{money.format(Number(quote.total_mxn ?? 0))}</td>
-                  <td>{money.format(Number(quote.commission_amount_mxn ?? 0))}</td>
+                  <td>
+                    {quote.status === 'aceptada'
+                      ? money.format(Number(quote.commission_amount_mxn ?? 0))
+                      : <small>Pendiente de cierre</small>}
+                  </td>
                   <td>
                     <select
                       className="sp-status-select"
                       value={quote.status}
-                      disabled={busyId === quote.id}
+                      disabled={busyId === quote.id || (!isAdmin && ['aceptada', 'rechazada'].includes(quote.status))}
                       onChange={(event) => changeStatus(quote.id, event.target.value)}
                     >
-                      {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+                      {STATUS_OPTIONS
+                        .filter((status) =>
+                          isAdmin
+                          || status === quote.status
+                          || !['aceptada', 'rechazada'].includes(status))
+                        .map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
                     </select>
                   </td>
                 </tr>
@@ -918,7 +935,7 @@ export default function SolarPortal() {
         {loadError && <div className="sp-global-error" role="alert">{loadError}</div>}
         {view === 'overview' && <Overview data={data} profile={profile} setView={setView} />}
         {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} />}
-        {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} />}
+        {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}

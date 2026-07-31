@@ -4,7 +4,12 @@ import { calculatePanelRecommendation } from '../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../lib/solar/cfe-receipt-parser.mjs';
 import { extractPdfText } from '../../lib/solar/pdf-text.js';
 
-const QUOTE_ENDPOINT = import.meta.env.PUBLIC_SOLAR_QUOTE_ENDPOINT;
+const SUPABASE_URL =
+  import.meta.env.PUBLIC_SUPABASE_URL
+  || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+const QUOTE_ENDPOINT =
+  import.meta.env.PUBLIC_SOLAR_QUOTE_ENDPOINT
+  || (SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/create-solar-quote` : '');
 const CDSE_WHATSAPP = '526681774845';
 const PRIVACY_NOTICE_VERSION = '2026-07-30';
 const PANEL_OPTIONS = [550, 590, 630];
