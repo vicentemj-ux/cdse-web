@@ -40,8 +40,11 @@ function printQuote(quote) {
   const result = quote.result_snapshot ?? {};
   const packageOffer = result.package ?? result.packageOffer;
   const financing = result.financing;
-  const printable = window.open('', '_blank', 'noopener,noreferrer');
+  // Abrimos la ventana desde el gesto del usuario; agregar noopener aquí puede
+  // hacer que algunos navegadores la consideren un popup bloqueado.
+  const printable = window.open('', '_blank');
   if (!printable) return;
+  printable.opener = null;
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   printable.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(quote.folio)} · CDSE Solar</title><style>
     :root{color-scheme:light;font-family:Arial,sans-serif;color:#10243e}body{margin:0;background:#f7f3ec}main{max-width:760px;margin:40px auto;background:#fff;padding:48px;box-shadow:0 12px 40px #10243e18}header{display:flex;justify-content:space-between;gap:24px;border-bottom:3px solid #e6a21a;padding-bottom:24px}h1{font-size:34px;margin:8px 0}h2{font-size:18px;letter-spacing:.08em;text-transform:uppercase;margin:34px 0 14px}p{line-height:1.55;color:#4c5d70}.folio{font-size:14px;font-weight:700;color:#1767a5;letter-spacing:.1em}.hero{background:#10243e;color:#fff;padding:24px;margin-top:28px}.hero strong{font-size:46px;display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#dce4ec}.grid div{background:#fff;padding:18px}.label{display:block;color:#718092;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}.value{font-weight:700;font-size:20px}.note{border-left:4px solid #e6a21a;padding-left:14px}@media print{body{background:#fff}main{box-shadow:none;margin:0;max-width:none;padding:0}}
@@ -318,7 +321,7 @@ function Overview({ data, profile, setView, onOpenQuote }) {
   );
 }
 
-function QuoteForm({ data, session, onCreated }) {
+function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   const [file, setFile] = useState(null);
   const [extracting, setExtracting] = useState(false);
   const [notice, setNotice] = useState('');
@@ -533,7 +536,17 @@ function QuoteForm({ data, session, onCreated }) {
         if (optionsError) throw optionsError;
         quoteResult = { ...quoteResult, ...(optionsData?.[0] ?? {}) };
       }
-      setResult(quoteResult);
+      setResult({
+        ...quoteResult,
+        solar_leads: { name: form.name, phone_e164: phoneE164, email: form.email },
+        solar_modules: selectedModule,
+        result_snapshot: {
+          ...(preview ?? {}),
+          ...(quoteResult.result_snapshot ?? {}),
+          package: selectedPackage ? { name: selectedPackage.name, panelCount: selectedPackage.panel_count, priceMxn: selectedPackage.price_mxn } : undefined,
+          financing: selectedFinancing ? { name: selectedFinancing.name, downPaymentMxn: Number((selectedPackage?.price_mxn ?? preview?.subtotal ?? quoteResult.total_mxn) * Number(selectedFinancing.down_payment_percent) / 100), installments: selectedFinancing.installments } : undefined,
+        },
+      });
       await onCreated();
     } catch (submissionError) {
       setError(errorMessage(submissionError));
@@ -631,8 +644,10 @@ function QuoteForm({ data, session, onCreated }) {
           {error && <p className="sp-form-error" role="alert">{error}</p>}
           {result && (
             <div className="sp-success">
-              <strong>{result.folio}</strong>
-              <span>{result.panel_count} paneles · {money.format(result.total_mxn)}</span>
+              <strong>Cotización generada</strong>
+              <span>{result.folio} · {result.panel_count} paneles · {money.format(result.total_mxn)}</span>
+              <QuoteActions quote={result} />
+              <button type="button" className="sp-text-button" onClick={() => onOpenQuote(result.quote_id)}>Ver en Resumen y seguimiento →</button>
             </div>
           )}
           <button className="sp-button sp-button--primary" disabled={busy}>
@@ -674,7 +689,7 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
     <section className="sp-view">
       <header className="sp-view-header"><div><p className="sp-section-number">PIPELINE / COTIZACIONES</p><h1>Seguimiento y cierre.</h1></div></header>
       {message && <p className="sp-form-error">{message}</p>}
-      {selectedQuote && <article className="sp-quote-detail">
+      {selectedQuote && <article id="quote-detail" className="sp-quote-detail">
         <div><p className="sp-section-number">COTIZACIÓN SELECCIONADA</p><h2>{selectedQuote.folio}</h2><p>{selectedQuote.solar_leads?.name} · {selectedQuote.panel_count} paneles de {selectedQuote.solar_modules?.watts} W · {money.format(Number(selectedQuote.total_mxn ?? 0))}</p></div>
         <QuoteActions quote={selectedQuote} />
       </article>}
@@ -1052,6 +1067,11 @@ export default function SolarPortal() {
   if (needsBootstrap) return <Bootstrap session={session} onReady={() => { setChecking(true); load(session); }} />;
 
   const isAdmin = profile?.role === 'admin';
+  const openQuote = (id) => {
+    setOpenQuoteId(id);
+    setView('quotes');
+    window.setTimeout(() => document.getElementById('quote-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
   const navigation = [
     ['overview', 'Resumen'],
     ['new', 'Nueva cotización'],
@@ -1078,9 +1098,9 @@ export default function SolarPortal() {
       </aside>
       <main className="sp-main">
         {loadError && <div className="sp-global-error" role="alert">{loadError}</div>}
-        {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={(id) => { setOpenQuoteId(id); setView('quotes'); }} />}
-        {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} />}
-        {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={setOpenQuoteId} />}
+        {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
+        {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
+        {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
