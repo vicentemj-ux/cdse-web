@@ -74,6 +74,23 @@ async function ocrPdf(pdfDocument, onProgress) {
   }
 }
 
+async function ocrImage(file, onProgress) {
+  const { createWorker } = await import('tesseract.js');
+  const worker = await createWorker('spa', 1, {
+    logger: (message) => {
+      if (message.status === 'recognizing text' && Number.isFinite(message.progress)) {
+        onProgress?.(message.progress);
+      }
+    },
+  });
+  try {
+    const result = await worker.recognize(file);
+    return result.data.text;
+  } finally {
+    await worker.terminate();
+  }
+}
+
 /**
  * Reads a CFE PDF text layer and falls back to Spanish OCR when the PDF uses
  * a custom font without a usable ToUnicode map (common in illustrated CFE PDFs).
@@ -82,4 +99,14 @@ export async function extractPdfText(file, { onProgress } = {}) {
   const { text, document } = await readPdfText(file);
   if (looksLikeReadableCfeText(text)) return text;
   return ocrPdf(document, onProgress);
+}
+
+/**
+ * Extracts a CFE receipt from either a PDF or a camera photo. Photos use the
+ * same Spanish OCR fallback as scanned/illustrated PDFs, so the seller can
+ * correct the result instead of starting over when a photo is blurry.
+ */
+export async function extractReceiptText(file, { onProgress } = {}) {
+  if (file?.type?.startsWith('image/')) return ocrImage(file, onProgress);
+  return extractPdfText(file, { onProgress });
 }

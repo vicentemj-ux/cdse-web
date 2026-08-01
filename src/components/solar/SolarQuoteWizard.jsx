@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { calculatePanelRecommendation } from '../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../lib/solar/cfe-receipt-parser.mjs';
-import { extractPdfText } from '../../lib/solar/pdf-text.js';
+import { extractReceiptText } from '../../lib/solar/pdf-text.js';
 import { isCompletePeriod, validatePeriodHistory } from '../../lib/solar/periods.mjs';
 
 const SUPABASE_URL =
@@ -202,7 +202,7 @@ export default function SolarQuoteWizard() {
         message:
           'La foto quedó adjunta. Confirma manualmente el historial mientras se completa la lectura OCR.',
       });
-      return;
+      // La foto también continúa al OCR; el mensaje se actualiza mientras procesa.
     }
 
     setReceiptExtraction({
@@ -211,7 +211,12 @@ export default function SolarQuoteWizard() {
     });
 
     try {
-      const rawText = await extractPdfText(file);
+      const rawText = await extractReceiptText(file, {
+        onProgress: (progress) => setReceiptExtraction((current) => ({
+          ...current,
+          message: `Analizando recibo... ${Math.round(progress * 100)}%`,
+        })),
+      });
       const extracted = parseCfeReceiptText(rawText);
       if (extracted.periods.length < 2) {
         throw new Error('No encontramos suficientes periodos en el archivo.');

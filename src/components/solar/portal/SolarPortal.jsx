@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { calculatePanelRecommendation } from '../../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
-import { extractPdfText } from '../../../lib/solar/pdf-text.js';
+import { extractReceiptText } from '../../../lib/solar/pdf-text.js';
 import { isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import {
@@ -453,12 +453,14 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     setError('');
     if (selected.type !== 'application/pdf') {
       setNotice('Imagen adjunta. Confirma manualmente nombre, tarifa e historial de consumo.');
-      return;
+      // Las imágenes también continúan al OCR; el aviso se actualiza mientras procesa.
     }
     setExtracting(true);
     setNotice('Leyendo el recibo CFE…');
     try {
-      const text = await extractPdfText(selected);
+      const text = await extractReceiptText(selected, {
+        onProgress: (progress) => setNotice(`Analizando recibo... ${Math.round(progress * 100)}%`),
+      });
       const receipt = parseCfeReceiptText(text);
       setForm((current) => ({
         ...current,
