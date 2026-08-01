@@ -124,7 +124,7 @@ function metricsFor(quote) {
   };
 }
 
-function header(doc, logo, quote, page, title) {
+function header(doc, logo, ciae, quote, page, title) {
   rounded(doc, 14, 10, 54, 15, COLORS.navy, 2);
   text(doc, 'CDSE', 18, 19, { size: 12, weight: 'bold', tone: COLORS.white });
   text(doc, 'ENERGIA SOLAR', 48, 18.5, { size: 5.5, weight: 'bold', tone: COLORS.lime });
@@ -133,8 +133,14 @@ function header(doc, logo, quote, page, title) {
   text(doc, clean(quote.folio), 196, 20, { size: 12, weight: 'bold', tone: COLORS.navy, align: 'right' });
   text(doc, new Date(quote.created_at ?? Date.now()).toLocaleDateString('es-MX'), 196, 25, { size: 7.5, tone: COLORS.slate, align: 'right' });
   line(doc, 14, 31, 196, 31, COLORS.line, 0.4);
-  text(doc, `PAGINA ${page} DE 3`, 196, 289, { size: 7, weight: 'bold', tone: COLORS.slate, align: 'right' });
-  text(doc, 'cdse.com.mx/solar  |  Los Mochis, Sinaloa', 14, 289, { size: 7, tone: COLORS.slate });
+  fill(doc, COLORS.navy);
+  doc.rect(0, 280, 210, 17, 'F');
+  fill(doc, COLORS.amber);
+  doc.rect(0, 280, 210, 1.2, 'F');
+  text(doc, 'Calle Morelos #209 Ote. | Col. Centro | Los Mochis, Sinaloa.', 14, 287, { size: 6.1, tone: COLORS.white });
+  text(doc, 'Tel: 668.1774845  |  cdse.com.mx/solar', 14, 293, { size: 6, tone: '#cad7e2' });
+  if (ciae) doc.addImage(ciae, 'PNG', 171.5, 281.5, 13.5, 13.5, `ciae-footer-${page}`, 'FAST');
+  text(doc, `PAGINA ${page} DE 3`, 205, 293, { size: 6.8, weight: 'bold', tone: COLORS.white, align: 'right' });
 }
 
 function labelValue(doc, label, value, x, y, width = 38) {
@@ -151,7 +157,7 @@ function benefit(doc, x, y, title, detail, glyph) {
 }
 
 function drawPageOne(doc, quote, assets, m) {
-  header(doc, assets.logoData, quote, 1, 'Propuesta solar personalizada');
+  header(doc, assets.logoData, assets.ciaeData, quote, 1, 'Propuesta solar personalizada');
   text(doc, 'SISTEMA FOTOVOLTAICO', 14, 45, { size: 8, weight: 'bold', tone: COLORS.amber });
   text(doc, 'Energia propia,', 14, 58, { size: 27, weight: 'bold', tone: COLORS.navy });
   text(doc, 'decision inteligente.', 14, 70, { size: 27, weight: 'bold', tone: COLORS.teal });
@@ -173,7 +179,7 @@ function drawPageOne(doc, quote, assets, m) {
   const stats = [
     ['SISTEMA', `${NUM.format(n(m.result.systemDcKw))} kWp`],
     ['PANELES', `${n(quote.panel_count ?? m.result.panelCount)} paneles`],
-    ['PRODUCCION', `${NUM.format(m.annualGeneration)} kWh/ano`],
+    ['PRODUCCION', `${NUM.format(m.annualGeneration)} kWh/año`],
     ['COBERTURA', m.coverage ? `${NUM.format(m.coverage * 100)}% estimada` : 'Por validar'],
   ];
   stats.forEach(([label, value], index) => {
@@ -190,7 +196,7 @@ function drawPageOne(doc, quote, assets, m) {
 
   rounded(doc, 108, 190, 88, 42, COLORS.mist, 3, COLORS.line);
   text(doc, 'CONSUMO ACTUAL SEGUN RECIBO', 114, 201, { size: 8, weight: 'bold', tone: COLORS.navy });
-  text(doc, `${NUM.format(m.annualConsumption)} kWh/ano`, 114, 214, { size: 14, weight: 'bold', tone: COLORS.teal });
+  text(doc, `${NUM.format(m.annualConsumption)} kWh/año`, 114, 214, { size: 14, weight: 'bold', tone: COLORS.teal });
   text(doc, `No. de servicio: ${clean(quote.solar_receipts?.service_number ?? quote.solar_receipts?.service_number_last4, 'Por confirmar')}`, 114, 223, { size: 6.8, tone: COLORS.slate });
 
   text(doc, 'RESPALDO QUE ACOMPANA TU PROYECTO', 14, 247, { size: 9, weight: 'bold', tone: COLORS.navy });
@@ -219,7 +225,7 @@ function drawBars(doc, periods, m) {
 }
 
 function drawPageTwo(doc, quote, assets, m) {
-  header(doc, assets.logoData, quote, 2, 'Estudio solar');
+  header(doc, assets.logoData, assets.ciaeData, quote, 2, 'Estudio solar');
   text(doc, 'ESTUDIO SOLAR', 14, 48, { size: 8, weight: 'bold', tone: COLORS.amber });
   text(doc, 'Tu recibo, convertido en una decision clara.', 14, 61, { size: 22, weight: 'bold', tone: COLORS.navy });
   text(doc, 'Comparacion entre el consumo registrado y la energia que puede producir el sistema recomendado.', 14, 70, { size: 8.5, tone: COLORS.slate, maxWidth: 155 });
@@ -289,7 +295,7 @@ function checklistRow(doc, y, label, detail) {
 }
 
 function drawPageThree(doc, quote, assets, m) {
-  header(doc, assets.logoData, quote, 3, 'Propuesta comercial');
+  header(doc, assets.logoData, assets.ciaeData, quote, 3, 'Propuesta comercial');
   text(doc, 'VALOR DEL PROYECTO', 14, 48, { size: 8, weight: 'bold', tone: COLORS.amber });
   text(doc, 'Una inversion respaldada por servicio local.', 14, 61, { size: 22, weight: 'bold', tone: COLORS.navy });
   text(doc, 'Ahorro proyectado, alcance y condiciones principales en una sola vista.', 14, 70, { size: 8.5, tone: COLORS.slate });
@@ -315,26 +321,24 @@ function drawPageThree(doc, quote, assets, m) {
   text(doc, m.projectedBill ? MXN.format(m.projectedBill) : 'Por validar', 20, 159, { size: 12, weight: 'bold', tone: COLORS.teal });
   rounded(doc, 108, 140, 88, 24, COLORS.navy, 3);
   text(doc, 'RETORNO SIMPLE', 114, 149, { size: 6.8, weight: 'bold', tone: COLORS.lime });
-  text(doc, m.roiYears ? `${NUM.format(m.roiYears)} anos` : 'Por validar', 114, 159, { size: 12, weight: 'bold', tone: COLORS.white });
+  text(doc, m.roiYears ? `${NUM.format(m.roiYears)} años` : 'Por validar', 114, 159, { size: 12, weight: 'bold', tone: COLORS.white });
 
-  text(doc, 'AHORRO ACUMULADO PROYECTADO', 14, 176, { size: 9.5, weight: 'bold', tone: COLORS.navy });
-  text(doc, m.annualBill && m.annualSavings ? `${NUM.format((m.annualSavings / m.annualBill) * 100)}% de ahorro anual estimado` : 'Se completa al validar los importes del recibo.', 196, 176, { size: 6.5, tone: COLORS.slate, align: 'right' });
-  drawProjection(doc, 14, 182, 182, 37, m);
+  text(doc, 'AHORRO ACUMULADO PROYECTADO', 14, 171, { size: 9.5, weight: 'bold', tone: COLORS.navy });
+  text(doc, m.annualBill && m.annualSavings ? `${NUM.format((m.annualSavings / m.annualBill) * 100)}% de ahorro anual estimado` : 'Se completa al validar los importes del recibo.', 196, 171, { size: 6.5, tone: COLORS.slate, align: 'right' });
+  drawProjection(doc, 14, 177, 182, 37, m);
 
-  text(doc, 'QUE INCLUYE TU PROPUESTA', 14, 227, { size: 9.5, weight: 'bold', tone: COLORS.navy });
-  checklistRow(doc, 233, 'Visita y levantamiento', 'Revision tecnica del sitio.');
-  checklistRow(doc, 250, 'Ingenieria e instalacion', 'Diseno, montaje y puesta en marcha.');
-  checklistRow(doc, 267, 'Interconexion y monitoreo', 'Acompanamiento ante CFE y seguimiento.');
+  text(doc, 'QUE INCLUYE TU PROPUESTA', 14, 222, { size: 9.5, weight: 'bold', tone: COLORS.navy });
+  checklistRow(doc, 228, 'Visita y levantamiento', 'Revision tecnica del sitio.');
+  checklistRow(doc, 245, 'Ingenieria e instalacion', 'Diseno, montaje y puesta en marcha.');
+  checklistRow(doc, 262, 'Interconexion y monitoreo', 'Acompanamiento ante CFE y seguimiento.');
 
-  rounded(doc, 108, 233, 88, 51, COLORS.navy, 3);
-  text(doc, 'CONDICIONES COMERCIALES', 115, 243, { size: 8, weight: 'bold', tone: COLORS.lime });
+  rounded(doc, 108, 228, 88, 48, COLORS.navy, 3);
+  text(doc, 'CONDICIONES COMERCIALES', 115, 238, { size: 8, weight: 'bold', tone: COLORS.lime });
   const packageOffer = m.result.package ?? m.result.packageOffer;
   const financing = m.result.financing;
-  text(doc, packageOffer?.name ?? `${n(quote.panel_count)} paneles instalados`, 115, 254, { size: 9.5, weight: 'bold', tone: COLORS.white, maxWidth: 70 });
-  text(doc, financing ? `${financing.name}. Enganche ${MXN.format(n(financing.downPaymentMxn))}.` : 'Forma de pago y anticipo sujetos a la propuesta seleccionada.', 115, 265, { size: 6.7, tone: '#cad7e2', maxWidth: 70 });
-  text(doc, 'Validacion final: techo, sombras, tablero y disponibilidad.', 115, 276, { size: 6.5, tone: '#cad7e2', maxWidth: 48 });
-  if (assets.ciaeData) doc.addImage(assets.ciaeData, 'PNG', 178, 266, 13, 13, 'ciae-seal', 'FAST');
-  text(doc, 'Instalador certificado CIAE', 151, 280, { size: 5.8, weight: 'bold', tone: COLORS.lime, maxWidth: 39 });
+  text(doc, packageOffer?.name ?? `${n(quote.panel_count)} paneles instalados`, 115, 249, { size: 9.5, weight: 'bold', tone: COLORS.white, maxWidth: 70 });
+  text(doc, financing ? `${financing.name}. Enganche ${MXN.format(n(financing.downPaymentMxn))}.` : 'Forma de pago y anticipo sujetos a la propuesta seleccionada.', 115, 260, { size: 6.7, tone: '#cad7e2', maxWidth: 70 });
+  text(doc, 'Validacion final: techo, sombras, tablero y disponibilidad.', 115, 271, { size: 6.5, tone: '#cad7e2', maxWidth: 70 });
 }
 
 export async function createSolarQuotePdf(quote, providedAssets = {}) {
