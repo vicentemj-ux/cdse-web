@@ -292,36 +292,49 @@ function drawPageThree(doc, quote, assets, m) {
   header(doc, assets.logoData, quote, 3, 'Propuesta comercial');
   text(doc, 'VALOR DEL PROYECTO', 14, 48, { size: 8, weight: 'bold', tone: COLORS.amber });
   text(doc, 'Una inversion respaldada por servicio local.', 14, 61, { size: 22, weight: 'bold', tone: COLORS.navy });
-  text(doc, 'Ahorro proyectado, alcance, garantias y condiciones principales en una sola vista.', 14, 70, { size: 8.5, tone: COLORS.slate });
+  text(doc, 'Ahorro proyectado, alcance y condiciones principales en una sola vista.', 14, 70, { size: 8.5, tone: COLORS.slate });
 
-  rounded(doc, 14, 81, 58, 35, COLORS.navy, 3);
-  text(doc, 'AHORRO ANUAL ESTIMADO', 20, 91, { size: 6.5, weight: 'bold', tone: COLORS.lime });
-  text(doc, m.annualSavings ? MXN.format(m.annualSavings) : 'Por validar', 20, 105, { size: 15, weight: 'bold', tone: COLORS.white });
-  rounded(doc, 77, 81, 55, 35, COLORS.mist, 3, COLORS.line);
-  text(doc, 'RETORNO SIMPLE', 83, 91, { size: 6.5, weight: 'bold', tone: COLORS.slate });
-  text(doc, m.roiYears ? `${NUM.format(m.roiYears)} anos` : 'Por validar', 83, 105, { size: 15, weight: 'bold', tone: COLORS.navy });
-  rounded(doc, 137, 81, 59, 35, COLORS.mist, 3, COLORS.line);
-  text(doc, 'INVERSION TOTAL', 143, 91, { size: 6.5, weight: 'bold', tone: COLORS.slate });
-  text(doc, MXN.format(m.total), 143, 105, { size: 15, weight: 'bold', tone: COLORS.teal });
+  // Sales-focused comparison inspired by the clearest competitor layouts:
+  // the customer sees the current CFE cost, projected solar cost and the
+  // resulting value before reading the technical conditions.
+  rounded(doc, 14, 80, 182, 11, COLORS.teal, 3);
+  text(doc, 'AHORRO EN SISTEMA SOLAR', 20, 87.5, { size: 11, weight: 'bold', tone: COLORS.white });
+  text(doc, `Inversion total: ${MXN.format(m.total)}`, 190, 87.5, { size: 6.5, tone: '#d9f2ee', align: 'right' });
 
-  text(doc, 'AHORRO ACUMULADO PROYECTADO', 14, 132, { size: 9.5, weight: 'bold', tone: COLORS.navy });
-  drawProjection(doc, 14, 140, 182, 46, m);
+  rounded(doc, 14, 95, 91, 40, COLORS.mist, 3, COLORS.line);
+  text(doc, 'PAGO CFE ANUAL', 20, 104, { size: 7.2, weight: 'bold', tone: COLORS.navy });
+  text(doc, m.annualBill ? MXN.format(m.annualBill) : 'Por validar', 20, 120, { size: 15, weight: 'bold', tone: COLORS.navy });
+  text(doc, 'Total observado en el recibo.', 20, 129, { size: 6.2, tone: COLORS.slate });
+  rounded(doc, 108, 95, 88, 40, COLORS.amber, 3);
+  text(doc, 'AHORRO ESTIMADO', 114, 104, { size: 7.2, weight: 'bold', tone: COLORS.navy });
+  text(doc, m.annualSavings ? MXN.format(m.annualSavings) : 'Por validar', 114, 120, { size: 15, weight: 'bold', tone: COLORS.navy });
+  text(doc, 'Lo que podria dejar de pagarse anualmente.', 114, 129, { size: 6.2, tone: COLORS.navy });
 
-  text(doc, 'QUE INCLUYE TU PROPUESTA', 14, 202, { size: 9.5, weight: 'bold', tone: COLORS.navy });
-  checklistRow(doc, 209, 'Visita y levantamiento', 'Revision tecnica del sitio.');
-  checklistRow(doc, 226, 'Ingenieria e instalacion', 'Diseno, montaje y puesta en marcha.');
-  checklistRow(doc, 243, 'Gestion de interconexion', 'Acompanamiento del tramite ante CFE.');
-  checklistRow(doc, 260, 'Monitoreo del sistema', 'Seguimiento de produccion disponible.');
+  rounded(doc, 14, 140, 91, 24, COLORS.mist, 3, COLORS.line);
+  text(doc, 'PAGO PROYECTADO CON SOLAR', 20, 149, { size: 6.8, weight: 'bold', tone: COLORS.navy });
+  text(doc, m.projectedBill ? MXN.format(m.projectedBill) : 'Por validar', 20, 159, { size: 12, weight: 'bold', tone: COLORS.teal });
+  rounded(doc, 108, 140, 88, 24, COLORS.navy, 3);
+  text(doc, 'RETORNO SIMPLE', 114, 149, { size: 6.8, weight: 'bold', tone: COLORS.lime });
+  text(doc, m.roiYears ? `${NUM.format(m.roiYears)} anos` : 'Por validar', 114, 159, { size: 12, weight: 'bold', tone: COLORS.white });
 
-  rounded(doc, 108, 209, 88, 66, COLORS.navy, 3);
-  text(doc, 'CONDICIONES COMERCIALES', 115, 220, { size: 8, weight: 'bold', tone: COLORS.lime });
+  text(doc, 'AHORRO ACUMULADO PROYECTADO', 14, 176, { size: 9.5, weight: 'bold', tone: COLORS.navy });
+  text(doc, m.annualBill && m.annualSavings ? `${NUM.format((m.annualSavings / m.annualBill) * 100)}% de ahorro anual estimado` : 'Se completa al validar los importes del recibo.', 196, 176, { size: 6.5, tone: COLORS.slate, align: 'right' });
+  drawProjection(doc, 14, 182, 182, 37, m);
+
+  text(doc, 'QUE INCLUYE TU PROPUESTA', 14, 227, { size: 9.5, weight: 'bold', tone: COLORS.navy });
+  checklistRow(doc, 233, 'Visita y levantamiento', 'Revision tecnica del sitio.');
+  checklistRow(doc, 250, 'Ingenieria e instalacion', 'Diseno, montaje y puesta en marcha.');
+  checklistRow(doc, 267, 'Interconexion y monitoreo', 'Acompanamiento ante CFE y seguimiento.');
+
+  rounded(doc, 108, 233, 88, 51, COLORS.navy, 3);
+  text(doc, 'CONDICIONES COMERCIALES', 115, 243, { size: 8, weight: 'bold', tone: COLORS.lime });
   const packageOffer = m.result.package ?? m.result.packageOffer;
   const financing = m.result.financing;
-  text(doc, packageOffer?.name ?? `${n(quote.panel_count)} paneles instalados`, 115, 231, { size: 9.5, weight: 'bold', tone: COLORS.white, maxWidth: 70 });
-  text(doc, financing ? `${financing.name}. Enganche ${MXN.format(n(financing.downPaymentMxn))}.` : 'Forma de pago y anticipo sujetos a la propuesta seleccionada.', 115, 242, { size: 6.7, tone: '#cad7e2', maxWidth: 70 });
-  text(doc, 'Siguiente paso: validar techo, sombras, tablero y disponibilidad de equipo para emitir la propuesta final.', 115, 255, { size: 6.7, tone: '#cad7e2', maxWidth: 55 });
-  if (assets.ciaeData) doc.addImage(assets.ciaeData, 'PNG', 171, 251, 17, 17, 'ciae-seal', 'FAST');
-  text(doc, 'Instalador certificado CIAE', 115, 269, { size: 6.4, weight: 'bold', tone: COLORS.lime });
+  text(doc, packageOffer?.name ?? `${n(quote.panel_count)} paneles instalados`, 115, 254, { size: 9.5, weight: 'bold', tone: COLORS.white, maxWidth: 70 });
+  text(doc, financing ? `${financing.name}. Enganche ${MXN.format(n(financing.downPaymentMxn))}.` : 'Forma de pago y anticipo sujetos a la propuesta seleccionada.', 115, 265, { size: 6.7, tone: '#cad7e2', maxWidth: 70 });
+  text(doc, 'Validacion final: techo, sombras, tablero y disponibilidad.', 115, 276, { size: 6.5, tone: '#cad7e2', maxWidth: 48 });
+  if (assets.ciaeData) doc.addImage(assets.ciaeData, 'PNG', 178, 266, 13, 13, 'ciae-seal', 'FAST');
+  text(doc, 'Instalador certificado CIAE', 151, 280, { size: 5.8, weight: 'bold', tone: COLORS.lime, maxWidth: 39 });
 }
 
 export async function createSolarQuotePdf(quote, providedAssets = {}) {
