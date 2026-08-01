@@ -771,6 +771,14 @@
   color: var(--solar-leaf);
 }
 
+.solar-extraction-status--confirmation {
+  color: var(--solar-sun-dark);
+}
+
+.solar-extraction-status--error {
+  color: #a63b32;
+}
+
 .solar-consumption-heading {
   display: flex;
   align-items: end;

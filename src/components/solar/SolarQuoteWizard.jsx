@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { calculatePanelRecommendation } from '../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../lib/solar/cfe-receipt-parser.mjs';
 import { extractPdfText } from '../../lib/solar/pdf-text.js';
+import { isCompletePeriod, validatePeriodHistory } from '../../lib/solar/periods.mjs';
 
 const SUPABASE_URL =
   import.meta.env.PUBLIC_SUPABASE_URL
@@ -99,6 +100,7 @@ export default function SolarQuoteWizard() {
     [form.zoneSlug],
   );
   const coveredMonths = form.billingFrequency === 'monthly' ? 1 : 2;
+  const periodHistory = validatePeriodHistory(periods, form.billingFrequency);
 
   function updateForm(event) {
     const { name, type, checked, value } = event.target;
@@ -137,16 +139,9 @@ export default function SolarQuoteWizard() {
       if (receiptMode === 'upload' && !receiptFile) {
         nextErrors.receiptFile = 'Adjunta una foto o PDF de tu recibo CFE.';
       }
-      if (
-        periods.some(
-          (period) =>
-            !Number.isFinite(Number(period.kwh)) ||
-            Number(period.kwh) <= 0 ||
-            !Number.isFinite(Number(period.amountMxn)) ||
-            Number(period.amountMxn) < 0,
-        )
-      ) {
-        nextErrors.periods = 'Completa consumo y monto de cada periodo.';
+      const history = validatePeriodHistory(periods, form.billingFrequency);
+      if (!history.ok) {
+        nextErrors.periods = 'Completa al menos dos periodos con consumo y monto. Puedes corregir la lectura o capturarlos manualmente.';
       }
     }
     if (targetStep === 3) {
@@ -295,7 +290,7 @@ export default function SolarQuoteWizard() {
         tariffCode: form.tariffCode,
         propertyType: form.propertyType,
         roofType: form.roofType,
-        periods: periods.map((period) => ({
+        periods: periods.filter(isCompletePeriod).map((period) => ({
           kwh: Number(period.kwh),
           amountMxn: Number(period.amountMxn),
           coveredMonths,
@@ -571,7 +566,7 @@ export default function SolarQuoteWizard() {
             <div>
               <h3>Confirma los datos del historial</h3>
               <p>
-                Captura al menos dos renglones del historial de consumo de tu recibo.
+                Revisa cada renglón leído. Si la lectura falla, cambia a captura manual; con dos periodos válidos podemos generar una estimación preliminar.
               </p>
             </div>
             <label className="solar-field solar-field--compact">
@@ -582,6 +577,10 @@ export default function SolarQuoteWizard() {
               </select>
             </label>
           </div>
+          <p className={`solar-extraction-status solar-extraction-status--${periodHistory.ok ? (periodHistory.isPartial ? 'confirmation' : 'success') : 'error'}`} role="status">
+            {periodHistory.completeCount} de {periodHistory.expectedPeriods} periodos completos.
+            {periodHistory.isPartial ? ' Puedes continuar; el asesor confirmará el historial faltante.' : ''}
+          </p>
 
           <div className="solar-periods">
             {periods.map((period, index) => (

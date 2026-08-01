@@ -259,6 +259,11 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-field { display: grid; gap: .15rem; align-content: start; }
 .sp-field--wide { grid-column: 1 / -1; }
 .sp-inline-notice { padding: .75rem .9rem; color: var(--sp-navy); background: color-mix(in oklch, var(--sp-blue) 8%, var(--sp-paper)); line-height: 1.45; }
+.sp-period-tools { display: flex; align-items: end; gap: 1rem; margin-top: 1rem; }
+.sp-period-tools .sp-inline-notice { flex: 1; margin: 0; font-size: .78rem; }
+.sp-field--compact { max-width: 12rem; }
+.sp-period-row--incomplete input { border-bottom-color: var(--sp-sun); }
+.sp-period-row button:disabled { opacity: .35; cursor: not-allowed; }
 .sp-form-error { color: var(--sp-danger); font-size: .82rem; line-height: 1.45; }
 .sp-period-list { display: grid; margin-top: 1.2rem; }
 .sp-period-row { display: grid; grid-template-columns: 2.5rem 1fr 1fr 2rem; gap: .75rem; align-items: end; border-top: 1px solid var(--sp-line); padding: .75rem 0; }
@@ -350,6 +355,8 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-form-grid { grid-template-columns: 1fr; }
   .sp-field--wide { grid-column: auto; }
   .sp-period-row { grid-template-columns: 1.7rem 1fr 1fr 1.5rem; gap: .35rem; }
+  .sp-period-tools { align-items: stretch; flex-direction: column; }
+  .sp-field--compact { max-width: none; }
   .sp-admin-grid { grid-template-columns: 1fr; }
   .sp-table-wrap--full { margin-inline: -1rem; padding-inline: 1rem; }
   .sp-quote-detail { align-items: start; flex-direction: column; }

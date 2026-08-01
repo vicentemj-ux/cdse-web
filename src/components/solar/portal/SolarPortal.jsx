@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { calculatePanelRecommendation } from '../../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
 import { extractPdfText } from '../../../lib/solar/pdf-text.js';
+import { isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import {
   getSupabaseClient,
@@ -381,6 +382,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   const selectedPrice = data.prices.find((price) => price.id === form.priceOptionId);
   const selectedPackage = availablePackages.find((item) => item.id === form.packageId);
   const selectedFinancing = data.financingOptions.find((item) => item.id === form.financingOptionId);
+  const periodHistory = validatePeriodHistory(periods, form.billingFrequency);
 
   useEffect(() => {
     if (!form.priceOptionId && availablePrices[0]) {
@@ -432,6 +434,10 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   function updateForm(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    if (name === 'billingFrequency') {
+      const coveredMonths = value === 'monthly' ? 1 : 2;
+      setPeriods((current) => current.map((period) => ({ ...period, coveredMonths })));
+    }
   }
 
   function updatePeriod(index, field, value) {
@@ -472,7 +478,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
       }
       setNotice(
         `Lectura lista: ${receipt.customerName ?? 'titular por confirmar'}, ` +
-        `${receipt.periods.length} periodos y ${number.format(receipt.annualConsumptionKwh)} kWh.`,
+        `${receipt.periods.length} periodos y ${number.format(receipt.annualConsumptionKwh)} kWh. Revisa y corrige los renglones antes de generar.`,
       );
     } catch {
       setNotice('No pudimos leer automáticamente el PDF. Captura los datos visibles del recibo.');
@@ -487,9 +493,10 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     setResult(null);
     const client = getSupabaseClient();
     const phoneE164 = normalizePhone(form.phone);
-    const validPeriods = periods.filter((period) => Number(period.kwh) > 0);
-    if (!form.name.trim() || !phoneE164 || !validPeriods.length) {
-      return setError('Confirma nombre, teléfono y al menos un periodo de consumo.');
+    const history = validatePeriodHistory(periods, form.billingFrequency);
+    const validPeriods = periods.filter(isCompletePeriod);
+    if (!form.name.trim() || !phoneE164 || !history.ok) {
+      return setError('Confirma nombre, teléfono y al menos dos periodos completos (kWh y monto). Los datos leídos se pueden corregir manualmente.');
     }
     if (!form.zoneId || !form.moduleId || !form.priceOptionId) {
       return setError('Selecciona zona, panel y tarifa instalada.');
@@ -631,13 +638,17 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
 
           <fieldset>
             <legend><span>02</span> Historial de consumo</legend>
+            <div className="sp-period-tools">
+              <label className="sp-field sp-field--compact"><span>Cada periodo es</span><select name="billingFrequency" value={form.billingFrequency} onChange={updateForm}><option value="bimonthly">Bimestral</option><option value="monthly">Mensual</option></select></label>
+              <p className="sp-inline-notice">{periodHistory.completeCount} de {periodHistory.expectedPeriods} periodos completos. {periodHistory.isPartial ? 'Se generará una estimación preliminar con los disponibles.' : 'Puedes corregir cualquier dato leído.'}</p>
+            </div>
             <div className="sp-period-list">
               {periods.map((period, index) => (
-                <div className="sp-period-row" key={index}>
+                <div className={`sp-period-row ${!isCompletePeriod(period) ? 'sp-period-row--incomplete' : ''}`} key={index}>
                   <strong>{String(index + 1).padStart(2, '0')}</strong>
                   <label><span>kWh</span><input type="number" min="1" value={period.kwh} onChange={(event) => updatePeriod(index, 'kwh', event.target.value)} /></label>
                   <label><span>Monto</span><input type="number" min="0" value={period.amountMxn} onChange={(event) => updatePeriod(index, 'amountMxn', event.target.value)} /></label>
-                  <button type="button" onClick={() => setPeriods((current) => current.filter((_, item) => item !== index))} aria-label={`Eliminar periodo ${index + 1}`}>×</button>
+                  <button type="button" disabled={periods.length <= 2} onClick={() => setPeriods((current) => current.length <= 2 ? current : current.filter((_, item) => item !== index))} aria-label={`Eliminar periodo ${index + 1}`}>×</button>
                 </div>
               ))}
             </div>
