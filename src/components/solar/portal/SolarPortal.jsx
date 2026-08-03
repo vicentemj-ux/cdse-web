@@ -346,6 +346,7 @@ function Overview({ data, profile, setView, onOpenQuote }) {
 
 function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [extracting, setExtracting] = useState(false);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
@@ -447,9 +448,16 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   }
 
   async function readReceipt(event) {
-    const selected = event.target.files?.[0];
-    if (!selected) return;
+    const selectedFiles = Array.from(event.target.files ?? []);
+    if (!selectedFiles.length) return;
+    if (selectedFiles.length > 4) {
+      setError('Selecciona hasta 4 archivos del recibo.');
+      event.target.value = '';
+      return;
+    }
+    const selected = selectedFiles[0];
     setFile(selected);
+    setFiles(selectedFiles);
     setError('');
     if (selected.type !== 'application/pdf') {
       setNotice('Imagen adjunta. Confirma manualmente nombre, tarifa e historial de consumo.');
@@ -458,9 +466,14 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     setExtracting(true);
     setNotice('Leyendo el recibo CFE…');
     try {
-      const text = await extractReceiptText(selected, {
-        onProgress: (progress) => setNotice(`Analizando recibo... ${Math.round(progress * 100)}%`),
-      });
+      const texts = [];
+      for (const [index, fileToRead] of selectedFiles.entries()) {
+        const text = await extractReceiptText(fileToRead, {
+          onProgress: (progress) => setNotice(`Analizando archivo ${index + 1} de ${selectedFiles.length}... ${Math.round(((index + progress) / selectedFiles.length) * 100)}%`),
+        });
+        texts.push(text);
+      }
+      const text = texts.join('\n');
       const receipt = parseCfeReceiptText(text);
       const expectedPeriods = expectedPeriodCount(receipt.periodicity === 'monthly' ? 'monthly' : 'bimonthly');
       setForm((current) => ({
@@ -630,7 +643,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
           <fieldset>
             <legend><span>01</span> Recibo CFE</legend>
             <label className="sp-upload">
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={readReceipt} />
+              <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={readReceipt} />
               <strong>{file ? file.name : 'Seleccionar PDF o fotografía'}</strong>
               <small>Hasta 10 MB · almacenamiento privado</small>
             </label>

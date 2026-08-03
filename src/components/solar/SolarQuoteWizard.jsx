@@ -70,6 +70,7 @@ export default function SolarQuoteWizard() {
   const [result, setResult] = useState(null);
   const [receiptMode, setReceiptMode] = useState('upload');
   const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptFiles, setReceiptFiles] = useState([]);
   const [receiptExtraction, setReceiptExtraction] = useState({
     status: 'idle',
     message: '',
@@ -136,7 +137,7 @@ export default function SolarQuoteWizard() {
       }
     }
     if (targetStep === 2) {
-      if (receiptMode === 'upload' && !receiptFile) {
+      if (receiptMode === 'upload' && receiptFiles.length === 0) {
         nextErrors.receiptFile = 'Adjunta una foto o PDF de tu recibo CFE.';
       }
       const history = validatePeriodHistory(periods, form.billingFrequency);
@@ -169,22 +170,23 @@ export default function SolarQuoteWizard() {
   }
 
   async function handleReceiptFile(event) {
-    const file = event.target.files?.[0] ?? null;
-    if (!file) {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
       setReceiptFile(null);
+      setReceiptFiles([]);
       setReceiptExtraction({ status: 'idle', message: '' });
       return;
     }
     const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.type)) {
+    if (files.length > 4 || files.some((file) => !allowed.includes(file.type))) {
       setErrors((current) => ({
         ...current,
-        receiptFile: 'Usa un archivo PDF, JPG, PNG o WebP.',
+        receiptFile: 'Selecciona hasta 4 archivos PDF, JPG, PNG o WebP.',
       }));
       event.target.value = '';
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (files.some((file) => file.size > 10 * 1024 * 1024)) {
       setErrors((current) => ({
         ...current,
         receiptFile: 'El archivo debe pesar menos de 10 MB.',
@@ -192,11 +194,12 @@ export default function SolarQuoteWizard() {
       event.target.value = '';
       return;
     }
-    setReceiptFile(file);
+    setReceiptFile(files[0]);
+    setReceiptFiles(files);
     setErrors((current) => ({ ...current, receiptFile: undefined }));
-    track('solar_receipt_selected', { file_type: file.type });
+    track('solar_receipt_selected', { file_type: files.map((file) => file.type).join(',') });
 
-    if (file.type !== 'application/pdf') {
+    if (files.some((file) => file.type !== 'application/pdf')) {
       setReceiptExtraction({
         status: 'confirmation',
         message:
@@ -211,12 +214,17 @@ export default function SolarQuoteWizard() {
     });
 
     try {
-      const rawText = await extractReceiptText(file, {
-        onProgress: (progress) => setReceiptExtraction((current) => ({
-          ...current,
-          message: `Analizando recibo... ${Math.round(progress * 100)}%`,
-        })),
-      });
+      const texts = [];
+      for (const [index, file] of files.entries()) {
+        const text = await extractReceiptText(file, {
+          onProgress: (progress) => setReceiptExtraction((current) => ({
+            ...current,
+            message: `Analizando archivo ${index + 1} de ${files.length}... ${Math.round(((index + progress) / files.length) * 100)}%`,
+          })),
+        });
+        texts.push(text);
+      }
+      const rawText = texts.join('\n');
       const extracted = parseCfeReceiptText(rawText);
       const frequency = extracted.periodicity === 'monthly' ? 'monthly' : 'bimonthly';
       const expectedPeriods = expectedPeriodCount(frequency);
@@ -535,16 +543,17 @@ export default function SolarQuoteWizard() {
 
           {receiptMode === 'upload' && (
             <div className="solar-upload">
-              <input
-                id="solar-receipt"
-                type="file"
+                <input
+                  id="solar-receipt"
+                  type="file"
+                  multiple
                 accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
                 onChange={handleReceiptFile}
                 aria-describedby={`receipt-help${errors.receiptFile ? ' receiptFile-error' : ''}`}
               />
               <label htmlFor="solar-receipt">
                 <span className="solar-upload__icon" aria-hidden="true">↑</span>
-                <strong>{receiptFile ? receiptFile.name : 'Seleccionar foto o PDF'}</strong>
+                  <strong>{receiptFiles.length ? receiptFiles.map((file) => file.name).join(', ') : 'Seleccionar una o varias fotos/PDF'}</strong>
                 <small id="receipt-help">
                   PDF, JPG, PNG o WebP · máximo 10 MB · archivo privado
                 </small>
