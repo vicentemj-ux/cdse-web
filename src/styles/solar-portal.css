@@ -259,6 +259,7 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-field { display: grid; gap: .15rem; align-content: start; }
 .sp-field--wide { grid-column: 1 / -1; }
 .sp-inline-notice { padding: .75rem .9rem; color: var(--sp-navy); background: color-mix(in oklch, var(--sp-blue) 8%, var(--sp-paper)); line-height: 1.45; }
+.sp-inline-notice--warning { color: #7a2e12; background: #fff1df; border-left: 3px solid #e7a21a; }
 .sp-period-tools { display: flex; align-items: end; gap: 1rem; margin-top: 1rem; }
 .sp-period-tools .sp-inline-notice { flex: 1; margin: 0; font-size: .78rem; }
 .sp-field--compact { max-width: 12rem; }

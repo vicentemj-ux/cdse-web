@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { calculatePanelRecommendation } from '../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../lib/solar/cfe-receipt-parser.mjs';
 import { extractReceiptText } from '../../lib/solar/pdf-text.js';
-import { isCompletePeriod, validatePeriodHistory } from '../../lib/solar/periods.mjs';
+import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '../../lib/solar/periods.mjs';
 
 const SUPABASE_URL =
   import.meta.env.PUBLIC_SUPABASE_URL
@@ -141,7 +141,7 @@ export default function SolarQuoteWizard() {
       }
       const history = validatePeriodHistory(periods, form.billingFrequency);
       if (!history.ok) {
-        nextErrors.periods = 'Completa al menos dos periodos con consumo y monto. Puedes corregir la lectura o capturarlos manualmente.';
+        nextErrors.periods = `La lectura automática está incompleta. Captura manualmente los ${history.expectedPeriods} periodos con consumo y monto antes de continuar.`;
       }
     }
     if (targetStep === 3) {
@@ -218,33 +218,31 @@ export default function SolarQuoteWizard() {
         })),
       });
       const extracted = parseCfeReceiptText(rawText);
-      if (extracted.periods.length < 2) {
-        throw new Error('No encontramos suficientes periodos en el archivo.');
-      }
-
-      setPeriods(
-        extracted.periods.map((period) => ({
+      const frequency = extracted.periodicity === 'monthly' ? 'monthly' : 'bimonthly';
+      const expectedPeriods = expectedPeriodCount(frequency);
+      const parsedPeriods = extracted.periods.map((period) => ({
           kwh: String(period.kwh),
           amountMxn: String(period.amountMxn),
-        })),
-      );
+        }));
+      while (parsedPeriods.length < expectedPeriods) parsedPeriods.push(createPeriod());
+      setPeriods(parsedPeriods);
       setForm((current) => ({
         ...current,
         name: current.name || extracted.customerName || '',
         tariffCode: normalizedTariff(extracted.tariffCode) ?? current.tariffCode,
         billingFrequency:
-          extracted.periodicity === 'monthly' ? 'monthly' : 'bimonthly',
+          frequency,
       }));
       setReceiptMetadata({
         serviceNumberLast4: extracted.serviceNumber?.slice(-4) ?? null,
         latestBillDate: extracted.periods[0]?.periodEnd ?? null,
       });
       setReceiptExtraction({
-        status: extracted.confidence === 'high' ? 'success' : 'confirmation',
+        status: parsedPeriods.filter(isCompletePeriod).length === expectedPeriods ? 'success' : 'error',
         message:
-          extracted.confidence === 'high'
-            ? `Encontramos ${extracted.periods.length} periodos y ${formatNumber(extracted.annualConsumptionKwh)} kWh en doce meses. Revisa y confirma los datos.`
-            : `Encontramos ${extracted.periods.length} periodos, pero necesitamos que confirmes el historial.`,
+          parsedPeriods.filter(isCompletePeriod).length === expectedPeriods
+            ? `Lectura automática completa: ${expectedPeriods} periodos y ${formatNumber(extracted.annualConsumptionKwh)} kWh.`
+            : `Lectura automática incompleta: ${parsedPeriods.filter(isCompletePeriod).length} de ${expectedPeriods} periodos completos. Captura manual asistida obligatoria.`,
       });
       setErrors((current) => ({ ...current, periods: undefined }));
       track('solar_receipt_extracted', {

@@ -168,16 +168,17 @@ function optionalEnumValue(
   return enumValue(value, field, allowed);
 }
 
-function parsePeriods(value: unknown, captureMethod: string) {
+function parsePeriods(value: unknown, captureMethod: string, billingFrequency: string) {
   if (!Array.isArray(value)) {
     throw new RequestError(400, 'INVALID_PERIODS', 'Agrega los periodos de consumo.');
   }
-  const minimum = captureMethod === 'payment_estimate' ? 1 : 2;
+  const expected = billingFrequency === 'monthly' ? 12 : 6;
+  const minimum = captureMethod === 'payment_estimate' ? 1 : expected;
   if (value.length < minimum || value.length > 12) {
     throw new RequestError(
       400,
       'INVALID_PERIODS',
-      `Captura entre ${minimum} y 12 periodos.`,
+      `Captura los ${minimum} periodos requeridos para una lectura completa.`,
     );
   }
 
@@ -212,7 +213,7 @@ function parsePeriods(value: unknown, captureMethod: string) {
         max: 10_000_000,
       }),
       amount_mxn: requiredNumber(period.amountMxn, `Monto del periodo ${index + 1}`, {
-        min: 0,
+        min: 0.001,
         max: 100_000_000,
       }),
       demand_kw: optionalNumber(period.demandKw, 'Demanda', {
@@ -396,7 +397,7 @@ Deno.serve(async (request: Request) => {
       'Tarifa',
       ALLOWED_TARIFFS,
     ) as TariffCode;
-    const periods = parsePeriods(receipt.periods, captureMethod);
+    const periods = parsePeriods(receipt.periods, captureMethod, billingFrequency);
     const extension = validateReceiptFile(receiptFile, captureMethod);
     const zoneSlug = requiredText(payload.zoneSlug, 'Zona', 80).toLowerCase();
     const preferredPanelWatts = optionalNumber(

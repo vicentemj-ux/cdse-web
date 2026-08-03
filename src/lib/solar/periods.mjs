@@ -11,7 +11,7 @@ export function isCompletePeriod(period) {
   if (period?.kwh === '' || period?.kwh == null || period?.amountMxn === '' || period?.amountMxn == null) return false;
   const kwh = Number(period?.kwh);
   const amount = Number(period?.amountMxn);
-  return Number.isFinite(kwh) && kwh > 0 && Number.isFinite(amount) && amount >= 0;
+  return Number.isFinite(kwh) && kwh > 0 && Number.isFinite(amount) && amount > 0;
 }
 
 export function validatePeriodHistory(periods = [], frequency = 'bimonthly') {
@@ -23,7 +23,7 @@ export function validatePeriodHistory(periods = [], frequency = 'bimonthly') {
   const minimumPeriods = 2;
   const expectedPeriods = expectedPeriodCount(frequency);
   return {
-    ok: completeIndexes.length >= minimumPeriods,
+    ok: completeIndexes.length >= expectedPeriods,
     completeIndexes,
     incompleteIndexes,
     completeCount: completeIndexes.length,

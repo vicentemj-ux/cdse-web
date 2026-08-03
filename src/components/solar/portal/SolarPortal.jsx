@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { calculatePanelRecommendation } from '../../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
 import { extractReceiptText } from '../../../lib/solar/pdf-text.js';
-import { isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
+import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import {
   getSupabaseClient,
@@ -180,7 +180,7 @@ function Login({ onSession }) {
             />
           </label>
           {message && <p className="sp-form-error" role="alert">{message}</p>}
-          <button className="sp-button sp-button--primary" disabled={busy}>
+          <button className="sp-button sp-button--primary" disabled={busy || !periodHistory.ok} title={!periodHistory.ok ? 'Completa la captura manual asistida del historial para continuar.' : undefined}>
             {busy ? 'Verificando…' : 'Entrar al cotizador'}
           </button>
         </form>
@@ -462,6 +462,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
         onProgress: (progress) => setNotice(`Analizando recibo... ${Math.round(progress * 100)}%`),
       });
       const receipt = parseCfeReceiptText(text);
+      const expectedPeriods = expectedPeriodCount(receipt.periodicity === 'monthly' ? 'monthly' : 'bimonthly');
       setForm((current) => ({
         ...current,
         name: receipt.customerName ?? current.name,
@@ -477,14 +478,16 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
           periodStart: period.periodStart ?? '',
           periodEnd: period.periodEnd ?? '',
         }));
-        // El historial editable siempre conserva dos renglones mínimos:
-        // si el OCR encuentra uno solo, el segundo queda listo para captura manual.
-        while (parsedPeriods.length < 2) parsedPeriods.push(blankPeriod());
+        // El historial editable conserva toda la cadencia esperada:
+        // los renglones que el OCR no encontró quedan listos para captura manual.
+        while (parsedPeriods.length < expectedPeriods) parsedPeriods.push(blankPeriod());
         setPeriods(parsedPeriods);
       }
+      const completePeriods = receipt.periods.filter(isCompletePeriod).length;
       setNotice(
-        `Lectura lista: ${receipt.customerName ?? 'titular por confirmar'}, ` +
-        `${receipt.periods.length} periodos y ${number.format(receipt.annualConsumptionKwh)} kWh. Revisa y corrige los renglones antes de generar.`,
+        completePeriods >= expectedPeriods
+          ? `Lectura automática completa: ${expectedPeriods} periodos y ${number.format(receipt.annualConsumptionKwh)} kWh.`
+          : `Lectura automática incompleta: ${completePeriods} de ${expectedPeriods} periodos completos. Captura manual asistida obligatoria antes de generar.`,
       );
     } catch {
       setNotice('No pudimos leer automáticamente el PDF. Captura los datos visibles del recibo.');
@@ -646,7 +649,11 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
             <legend><span>02</span> Historial de consumo</legend>
             <div className="sp-period-tools">
               <label className="sp-field sp-field--compact"><span>Cada periodo es</span><select name="billingFrequency" value={form.billingFrequency} onChange={updateForm}><option value="bimonthly">Bimestral</option><option value="monthly">Mensual</option></select></label>
-              <p className="sp-inline-notice">{periodHistory.completeCount} de {periodHistory.expectedPeriods} periodos completos. {periodHistory.isPartial ? 'Se generará una estimación preliminar con los disponibles.' : 'Puedes corregir cualquier dato leído.'}</p>
+              <p className={`sp-inline-notice ${periodHistory.ok ? '' : 'sp-inline-notice--warning'}`} role="status">
+                {periodHistory.ok
+                  ? `Lectura completa: ${periodHistory.completeCount} de ${periodHistory.expectedPeriods} periodos. Puedes corregir cualquier dato leído.`
+                  : `Lectura incompleta: ${periodHistory.completeCount} de ${periodHistory.expectedPeriods} periodos. Captura manual asistida obligatoria para continuar.`}
+              </p>
             </div>
             <div className="sp-period-list">
               {periods.map((period, index) => (
