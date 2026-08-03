@@ -12,6 +12,16 @@ function looksLikeReadableCfeText(text) {
   return hasIdentityAndPeriod || tokenCount >= 3;
 }
 
+function hasCorruptedTextLayer(text) {
+  if (!text) return true;
+  // Illustrator exports used by some CFE receipts expose custom glyphs as
+  // literal (cid:NNN) tokens. The visible PDF looks correct, but parsing that
+  // layer produces incomplete service numbers and history rows.
+  const cidTokens = text.match(/\(cid:\d+\)/gi) ?? [];
+  const replacementChars = (text.match(/[\uFFFD]/g) ?? []).length;
+  return cidTokens.length >= 4 || replacementChars >= 2;
+}
+
 async function readPdfText(file) {
   const [{ getDocument, GlobalWorkerOptions }, { default: workerUrl }] = await Promise.all([
     import('pdfjs-dist/legacy/build/pdf.mjs'),
@@ -97,7 +107,7 @@ async function ocrImage(file, onProgress) {
  */
 export async function extractPdfText(file, { onProgress } = {}) {
   const { text, document } = await readPdfText(file);
-  if (looksLikeReadableCfeText(text)) return text;
+  if (looksLikeReadableCfeText(text) && !hasCorruptedTextLayer(text)) return text;
   return ocrPdf(document, onProgress);
 }
 
