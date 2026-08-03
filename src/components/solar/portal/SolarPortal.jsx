@@ -470,13 +470,17 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
         serviceNumber: receipt.serviceNumber ?? '',
       }));
       if (receipt.periods.length) {
-        setPeriods(receipt.periods.map((period) => ({
+        const parsedPeriods = receipt.periods.map((period) => ({
           kwh: String(period.kwh),
           amountMxn: String(period.amountMxn ?? 0),
           coveredMonths: period.coveredMonths ?? (receipt.periodicity === 'monthly' ? 1 : 2),
           periodStart: period.periodStart ?? '',
           periodEnd: period.periodEnd ?? '',
-        })));
+        }));
+        // El historial editable siempre conserva dos renglones mínimos:
+        // si el OCR encuentra uno solo, el segundo queda listo para captura manual.
+        while (parsedPeriods.length < 2) parsedPeriods.push(blankPeriod());
+        setPeriods(parsedPeriods);
       }
       setNotice(
         `Lectura lista: ${receipt.customerName ?? 'titular por confirmar'}, ` +
