@@ -383,6 +383,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   const selectedPrice = data.prices.find((price) => price.id === form.priceOptionId);
   const selectedPackage = availablePackages.find((item) => item.id === form.packageId);
   const selectedFinancing = data.financingOptions.find((item) => item.id === form.financingOptionId);
+  const selectedPlanPrice = Number(selectedFinancing?.price_per_panel_mxn ?? selectedPrice?.price_per_panel_mxn ?? 0);
   const periodHistory = validatePeriodHistory(periods, form.billingFrequency);
 
   useEffect(() => {
@@ -411,12 +412,12 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
       });
       return {
         ...sizing,
-        subtotal: sizing.panelCount * Number(selectedPrice.price_per_panel_mxn),
+        subtotal: sizing.panelCount * selectedPlanPrice,
       };
     } catch {
       return null;
     }
-  }, [periods, selectedModule, selectedZone, selectedPrice, form.coverageTarget]);
+  }, [periods, selectedModule, selectedZone, selectedPrice, selectedPlanPrice, form.coverageTarget]);
 
   useEffect(() => {
     if (!preview) return;
@@ -434,7 +435,11 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
 
   function updateForm(event) {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'financingOptionId' && value ? { packageId: '' } : {}),
+    }));
     if (name === 'billingFrequency') {
       const coveredMonths = value === 'monthly' ? 1 : 2;
       setPeriods((current) => current.map((period) => ({ ...period, coveredMonths })));
@@ -704,7 +709,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
               <dl>
                 <div><dt>Potencia</dt><dd>{number.format(preview.systemDcKw)} kW</dd></div>
                 <div><dt>Generación</dt><dd>{number.format(preview.annualGenerationKwh)} kWh/año</dd></div>
-                <div><dt>Precio por panel</dt><dd>{money.format(selectedPrice.price_per_panel_mxn)}</dd></div>
+                <div><dt>Precio por panel</dt><dd>{money.format(selectedPlanPrice)}</dd></div>
                 <div><dt>{selectedPackage ? 'Paquete seleccionado' : 'Subtotal'}</dt><dd>{money.format(selectedPackage ? selectedPackage.price_mxn : preview.subtotal)}</dd></div>
               </dl>
               {selectedPackage && <p className="sp-inline-notice">Se ofrecerá automáticamente {selectedPackage.name}. Puedes cambiar a precio por panel.</p>}
@@ -877,7 +882,7 @@ function Catalog({ data, refresh }) {
   const [priceForm, setPriceForm] = useState({ moduleId: data.modules[0]?.id ?? '', name: 'Precio instalado', price: '', min: '1' });
   const [promotionForm, setPromotionForm] = useState({ name: '', moduleId: '', type: 'percentage', value: '', min: '1' });
   const [packageForm, setPackageForm] = useState({ name: '', description: '', moduleId: data.modules[0]?.id ?? '', panelCount: '4', price: '' });
-  const [financingForm, setFinancingForm] = useState({ name: '', description: '', minPanels: '8', downPayment: '50', installments: '12', interestRate: '0' });
+  const [financingForm, setFinancingForm] = useState({ name: '', description: '', minPanels: '1', pricePerPanel: '', downPayment: '50', installments: '12', interestRate: '0' });
 
   async function addModule(event) {
     event.preventDefault();
@@ -941,6 +946,7 @@ function Catalog({ data, refresh }) {
       name: financingForm.name,
       description: financingForm.description || null,
       min_panels: Number(financingForm.minPanels),
+      price_per_panel_mxn: financingForm.pricePerPanel ? Number(financingForm.pricePerPanel) : null,
       down_payment_percent: Number(financingForm.downPayment),
       installments: Number(financingForm.installments),
       interest_rate: Number(financingForm.interestRate),
