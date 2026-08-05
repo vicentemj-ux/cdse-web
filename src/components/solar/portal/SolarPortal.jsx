@@ -5,6 +5,7 @@ import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
 import { extractReceiptText } from '../../../lib/solar/pdf-text.js';
 import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
+import { calculateInverterSizing, selectSuggestedInverter } from '../../../lib/solar/inverter-sizing.mjs';
 import {
   getSupabaseClient,
   getSupabaseFunctionsUrl,
@@ -366,6 +367,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     serviceNumber: '',
     zoneId: data.zones.find((zone) => zone.slug === 'los-mochis')?.id ?? data.zones[0]?.id ?? '',
     moduleId: data.modules[0]?.id ?? '',
+    inverterId: '',
     priceOptionId: '',
     promotionId: '',
     packageId: '',
@@ -379,6 +381,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   );
   const availablePackages = data.packages.filter((item) => item.active && item.module_id === form.moduleId);
   const selectedModule = data.modules.find((module) => module.id === form.moduleId);
+  const selectedInverter = data.inverters.find((inverter) => inverter.id === form.inverterId);
   const selectedZone = data.zones.find((zone) => zone.id === form.zoneId);
   const selectedPrice = data.prices.find((price) => price.id === form.priceOptionId);
   const selectedPackage = availablePackages.find((item) => item.id === form.packageId);
@@ -418,6 +421,14 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
       return null;
     }
   }, [periods, selectedModule, selectedZone, selectedPrice, selectedPlanPrice, form.coverageTarget]);
+
+  const selectedInverterSizing = calculateInverterSizing(selectedInverter, preview?.systemDcKw);
+
+  useEffect(() => {
+    if (!preview?.systemDcKw || (selectedInverter && selectedInverter.active)) return;
+    const suggestion = selectSuggestedInverter(data.inverters, preview.systemDcKw);
+    if (suggestion) setForm((current) => ({ ...current, inverterId: suggestion.id }));
+  }, [preview?.systemDcKw, selectedInverter?.id, selectedInverter?.active, data.inverters]);
 
   useEffect(() => {
     if (!preview) return;
@@ -525,8 +536,8 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     if (!form.name.trim() || !phoneE164 || !history.ok) {
       return setError('Confirma nombre, teléfono y al menos dos periodos completos (kWh y monto). Los datos leídos se pueden corregir manualmente.');
     }
-    if (!form.zoneId || !form.moduleId || !form.priceOptionId) {
-      return setError('Selecciona zona, panel y tarifa instalada.');
+    if (!form.zoneId || !form.moduleId || !form.priceOptionId || !form.inverterId) {
+      return setError('Selecciona zona, panel, inversor y tarifa instalada.');
     }
 
     setBusy(true);
@@ -574,6 +585,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
         p_pricing: {
           zoneId: form.zoneId,
           moduleId: form.moduleId,
+          inverterId: form.inverterId,
           priceOptionId: form.priceOptionId,
           promotionId: form.promotionId,
           packageId: form.packageId,
@@ -597,6 +609,9 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
         created_at: new Date().toISOString(),
         solar_leads: { name: form.name, phone_e164: phoneE164, email: form.email, municipality: form.municipality },
         solar_modules: selectedModule,
+        solar_inverters: selectedInverter,
+        inverter_quantity: selectedInverterSizing?.quantity,
+        inverter_loading_percent: selectedInverterSizing?.loadingPercent,
         input_snapshot: { annualConsumptionKwh: preview?.annualConsumptionKwh, tariffCode: form.tariffCode },
         solar_receipts: {
           tariff_code: form.tariffCode,
@@ -612,6 +627,14 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
         },
         result_snapshot: {
           ...(preview ?? {}),
+          inverter: selectedInverter ? {
+            id: selectedInverter.id,
+            brand: selectedInverter.brand,
+            model: selectedInverter.model,
+            acCapacityKw: Number(selectedInverter.ac_capacity_kw),
+            quantity: selectedInverterSizing?.quantity ?? 1,
+            loadingPercent: selectedInverterSizing?.loadingPercent ?? 0,
+          } : undefined,
           ...(quoteResult.result_snapshot ?? {}),
           package: selectedPackage ? { name: selectedPackage.name, panelCount: selectedPackage.panel_count, priceMxn: selectedPackage.price_mxn } : undefined,
           financing: selectedFinancing ? { name: selectedFinancing.name, downPaymentMxn: Number((selectedPackage?.price_mxn ?? preview?.subtotal ?? quoteResult.total_mxn) * Number(selectedFinancing.down_payment_percent) / 100), installments: selectedFinancing.installments } : undefined,
@@ -625,7 +648,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     }
   }
 
-  if (!data.modules.length || !data.prices.length || !data.zones.length) {
+  if (!data.modules.length || !data.inverters.length || !data.prices.length || !data.zones.length) {
     return (
       <section className="sp-view">
         <header className="sp-view-header"><div><p className="sp-section-number">COTIZADOR / NUEVO</p><h1>Falta preparar el catálogo.</h1></div></header>
@@ -695,6 +718,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
               <label className="sp-field"><span>Promoción</span><select name="promotionId" value={form.promotionId} onChange={updateForm}><option value="">Sin promoción</option>{availablePromotions.map((promotion) => <option value={promotion.id} key={promotion.id}>{promotion.name}</option>)}</select></label>
               <label className="sp-field"><span>Paquete sugerido</span><select name="packageId" value={form.packageId} onChange={updateForm}><option value="">Precio por panel</option>{availablePackages.map((item) => <option value={item.id} key={item.id}>{item.name} · {money.format(item.price_mxn)}</option>)}</select></label>
               {data.financingOptions.some((item) => Number(item.min_panels) <= Math.max(preview?.panelCount ?? 0, Number(selectedPackage?.panel_count ?? 0))) && <label className="sp-field"><span>Financiamiento</span><select name="financingOptionId" value={form.financingOptionId} onChange={updateForm}><option value="">Sin financiamiento</option>{data.financingOptions.filter((item) => item.active && Number(item.min_panels) <= Math.max(preview?.panelCount ?? 0, Number(selectedPackage?.panel_count ?? 0))).map((item) => <option value={item.id} key={item.id}>{item.name} · enganche {number.format(item.down_payment_percent)}%</option>)}</select></label>}
+              <label className="sp-field"><span>Inversor recomendado</span><select name="inverterId" value={form.inverterId} onChange={updateForm}><option value="">Selecciona un inversor</option>{data.inverters.filter((item) => item.active).map((item) => <option value={item.id} key={item.id}>{item.brand} {item.model} · {number.format(item.ac_capacity_kw)} kW AC</option>)}</select></label>
               <label className="sp-field"><span>Cobertura objetivo</span><select name="coverageTarget" value={form.coverageTarget} onChange={updateForm}><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option></select></label>
               <label className="sp-field"><span>Tipo de techo</span><select name="roofType" value={form.roofType} onChange={updateForm}><option value="unknown">Por confirmar</option><option value="concrete">Losa</option><option value="metal">Lámina</option><option value="tile">Teja</option><option value="ground">Suelo</option></select></label>
             </div>
@@ -710,6 +734,8 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
                 <div><dt>Potencia</dt><dd>{number.format(preview.systemDcKw)} kW</dd></div>
                 <div><dt>Generación</dt><dd>{number.format(preview.annualGenerationKwh)} kWh/año</dd></div>
                 <div><dt>Precio por panel</dt><dd>{money.format(selectedPlanPrice)}</dd></div>
+                <div><dt>Inversor</dt><dd>{selectedInverter ? `${selectedInverterSizing?.quantity ?? 1} × ${selectedInverter.brand} ${selectedInverter.model}` : 'Por seleccionar'}</dd></div>
+                <div><dt>Carga DC/AC</dt><dd>{selectedInverterSizing ? `${number.format(selectedInverterSizing.loadingPercent)}%` : '—'} <small>máx. 120%</small></dd></div>
                 <div><dt>{selectedPackage ? 'Paquete seleccionado' : 'Subtotal'}</dt><dd>{money.format(selectedPackage ? selectedPackage.price_mxn : preview.subtotal)}</dd></div>
               </dl>
               {selectedPackage && <p className="sp-inline-notice">Se ofrecerá automáticamente {selectedPackage.name}. Puedes cambiar a precio por panel.</p>}
@@ -879,6 +905,7 @@ function Catalog({ data, refresh }) {
   const [tab, setTab] = useState('panels');
   const [message, setMessage] = useState('');
   const [moduleForm, setModuleForm] = useState({ sku: '', brand: '', model: '', watts: '590' });
+  const [inverterForm, setInverterForm] = useState({ sku: '', brand: 'GROWATT', model: '', capacityKw: '', phases: '1', warrantyYears: '10' });
   const [priceForm, setPriceForm] = useState({ moduleId: data.modules[0]?.id ?? '', name: 'Precio instalado', price: '', min: '1' });
   const [promotionForm, setPromotionForm] = useState({ name: '', moduleId: '', type: 'percentage', value: '', min: '1' });
   const [packageForm, setPackageForm] = useState({ name: '', description: '', moduleId: data.modules[0]?.id ?? '', panelCount: '4', price: '' });
@@ -908,6 +935,22 @@ function Catalog({ data, refresh }) {
       active: true,
     });
     setMessage(error ? errorMessage(error) : 'Tarifa publicada.');
+    if (!error) await refresh();
+  }
+
+  async function addInverter(event) {
+    event.preventDefault();
+    const { error } = await getSupabaseClient().from('solar_inverters').insert({
+      sku: inverterForm.sku,
+      brand: inverterForm.brand,
+      model: inverterForm.model,
+      inverter_type: 'string',
+      ac_capacity_kw: Number(inverterForm.capacityKw),
+      phases: Number(inverterForm.phases),
+      warranty_years: Number(inverterForm.warrantyYears),
+      active: true,
+    });
+    setMessage(error ? errorMessage(error) : 'Inversor agregado al catálogo.');
     if (!error) await refresh();
   }
 
@@ -967,6 +1010,7 @@ function Catalog({ data, refresh }) {
       <header className="sp-view-header"><div><p className="sp-section-number">ADMINISTRACIÓN / CATÁLOGO</p><h1>Qué puede vender el equipo.</h1></div></header>
       <div className="sp-tabs" role="tablist">
         <button className={tab === 'panels' ? 'is-active' : ''} onClick={() => setTab('panels')}>Paneles</button>
+        <button className={tab === 'inverters' ? 'is-active' : ''} onClick={() => setTab('inverters')}>Inversores</button>
         <button className={tab === 'prices' ? 'is-active' : ''} onClick={() => setTab('prices')}>Precios por panel</button>
         <button className={tab === 'promotions' ? 'is-active' : ''} onClick={() => setTab('promotions')}>Promociones</button>
         <button className={tab === 'packages' ? 'is-active' : ''} onClick={() => setTab('packages')}>Paquetes</button>
@@ -975,6 +1019,8 @@ function Catalog({ data, refresh }) {
       {message && <p className="sp-inline-notice">{message}</p>}
       <div className="sp-admin-grid">
         <div className="sp-catalog-list">
+          {tab === 'inverters' && data.inverters.map((item) => <div className="sp-catalog-row" key={item.id}><div><strong>{item.brand} {item.model}</strong><span>{item.sku} · {item.phases} fase · {item.active ? 'Activo' : 'Desactivado'}</span></div><b>{number.format(item.ac_capacity_kw)} kW AC</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_inverters', item.id, !item.active)}>{item.active ? 'Desactivar' : 'Activar'}</button></div>)}
+          {tab === 'inverters' && <form className="sp-admin-form" onSubmit={addInverter}><h2>Agregar inversor</h2><label className="sp-field"><span>SKU</span><input value={inverterForm.sku} onChange={(e) => setInverterForm({ ...inverterForm, sku: e.target.value })} required /></label><label className="sp-field"><span>Marca</span><input value={inverterForm.brand} onChange={(e) => setInverterForm({ ...inverterForm, brand: e.target.value })} required /></label><label className="sp-field"><span>Modelo</span><input value={inverterForm.model} onChange={(e) => setInverterForm({ ...inverterForm, model: e.target.value })} required /></label><label className="sp-field"><span>Capacidad nominal AC</span><input type="number" min="0.1" step="0.1" value={inverterForm.capacityKw} onChange={(e) => setInverterForm({ ...inverterForm, capacityKw: e.target.value })} required /></label><label className="sp-field"><span>Fases</span><select value={inverterForm.phases} onChange={(e) => setInverterForm({ ...inverterForm, phases: e.target.value })}><option value="1">1 fase</option><option value="2">2 fases</option><option value="3">3 fases</option></select></label><label className="sp-field"><span>Garantía</span><input type="number" min="0" step="0.5" value={inverterForm.warrantyYears} onChange={(e) => setInverterForm({ ...inverterForm, warrantyYears: e.target.value })} /></label><button className="sp-button sp-button--primary">Guardar inversor</button></form>}
           {tab === 'panels' && data.modules.map((module) => <div className="sp-catalog-row" key={module.id}><div><strong>{module.brand} {module.model}</strong><span>{module.sku} · {module.active ? 'Activo' : 'Desactivado'}</span></div><b>{module.watts} W</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_modules', module.id, !module.active)}>{module.active ? 'Desactivar' : 'Activar'}</button></div>)}
           {tab === 'prices' && data.prices.map((price) => <div className="sp-catalog-row" key={price.id}><div><strong>{price.name}</strong><span>{data.moduleMap[price.module_id]?.brand} {data.moduleMap[price.module_id]?.model} · {price.active ? 'Activo' : 'Desactivado'}</span></div><b>{money.format(price.price_per_panel_mxn)}</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_price_options', price.id, !price.active)}>{price.active ? 'Desactivar' : 'Activar'}</button></div>)}
           {tab === 'promotions' && data.promotions.map((promotion) => <div className="sp-catalog-row" key={promotion.id}><div><strong>{promotion.name}</strong><span>Desde {promotion.min_panels} paneles · {promotion.active ? 'Activo' : 'Desactivado'}</span></div><b>{promotion.discount_type === 'percentage' ? `${promotion.discount_value}%` : money.format(promotion.discount_value)}</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_promotions', promotion.id, !promotion.active)}>{promotion.active ? 'Desactivar' : 'Activar'}</button></div>)}
@@ -1062,7 +1108,7 @@ export default function SolarPortal() {
   const [openQuoteId, setOpenQuoteId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
-    quotes: [], leads: [], receipts: [], modules: [], prices: [], promotions: [], packages: [], financingOptions: [],
+    quotes: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
     zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
@@ -1088,12 +1134,13 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, leads, receipts, modules, prices, promotions, packages, financingOptions, zones, profiles] =
+    const [quotes, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
-        client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
+        client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
         client.from('solar_modules').select('*').order('watts'),
+        client.from('solar_inverters').select('*').order('ac_capacity_kw'),
         client.from('solar_price_options').select('*').order('created_at', { ascending: false }),
         client.from('solar_promotions').select('*').order('created_at', { ascending: false }),
         client.from('solar_packages').select('*').order('created_at', { ascending: false }),
@@ -1101,7 +1148,7 @@ export default function SolarPortal() {
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
       ]);
-    const firstError = [quotes, leads, receipts, modules, prices, promotions, packages, financingOptions, zones, profiles]
+    const firstError = [quotes, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
@@ -1111,6 +1158,7 @@ export default function SolarPortal() {
       leads: leads.data ?? [],
       receipts: receipts.data ?? [],
       modules: moduleRows,
+      inverters: inverters.data ?? [],
       prices: prices.data ?? [],
       promotions: promotions.data ?? [],
       packages: packages.data ?? [],

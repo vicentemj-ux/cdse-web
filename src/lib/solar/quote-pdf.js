@@ -24,7 +24,7 @@ function n(value, fallback = 0) {
 
 function clean(value, fallback = 'Por confirmar') {
   const text = String(value ?? '').trim();
-  return text || fallback;
+  return (text || fallback).replace(/[·–—‑]/g, '-');
 }
 
 function hexToRgb(hex) {
@@ -341,6 +341,100 @@ function drawPageThree(doc, quote, assets, m) {
   text(doc, 'Validacion final: techo, sombras, tablero y disponibilidad.', 115, 271, { size: 6.5, tone: '#cad7e2', maxWidth: 70 });
 }
 
+function includedMark(doc, x, y) {
+  rounded(doc, x - 4, y - 4, 8, 8, COLORS.lime, 2);
+  color(doc, COLORS.navy, true);
+  doc.setLineWidth(0.9);
+  doc.line(x - 2.2, y, x - 0.5, y + 1.8);
+  doc.line(x - 0.5, y + 1.8, x + 2.6, y - 1.8);
+}
+
+function detailRow(doc, y, index, columns) {
+  if (index % 2 === 0) {
+    fill(doc, COLORS.mist);
+    doc.roundedRect(14, y, 182, 8.2, 1.5, 1.5, 'F');
+  }
+  text(doc, columns[0], 18, y + 5.5, { size: 6.7, weight: index < 0 ? 'bold' : 'normal', tone: COLORS.ink, maxWidth: 46 });
+  if (columns[1] === true) includedMark(doc, 168, y + 4.1);
+  else text(doc, columns[1], 74, y + 5.5, { size: 6.7, tone: COLORS.ink, maxWidth: 78 });
+  if (columns[2] !== undefined) text(doc, columns[2], 190, y + 5.5, { size: 6.7, weight: 'bold', tone: COLORS.navy, align: 'right', maxWidth: 25 });
+}
+
+function serviceRow(doc, y, index, label) {
+  if (index % 2 === 0) {
+    fill(doc, COLORS.mist);
+    doc.roundedRect(14, y, 182, 8.2, 1.5, 1.5, 'F');
+  }
+  text(doc, label, 18, y + 5.5, { size: 6.5, tone: COLORS.ink, maxWidth: 135 });
+  includedMark(doc, 168, y + 4.1);
+}
+
+function drawPageThreeDetailed(doc, quote, assets, m) {
+  header(doc, assets.logoData, assets.ciaeData, quote, 3, 'Desglose del sistema');
+  text(doc, 'ALCANCE TECNICO Y COMERCIAL', 14, 44, { size: 7.5, weight: 'bold', tone: COLORS.amber });
+  text(doc, 'Todo lo que integra tu sistema solar.', 14, 56, { size: 21, weight: 'bold', tone: COLORS.navy });
+  text(doc, 'Equipos, servicios y condiciones presentados con claridad antes de la visita tecnica.', 14, 65, { size: 8.2, tone: COLORS.slate, maxWidth: 150 });
+
+  rounded(doc, 14, 73, 182, 10, COLORS.navy, 2);
+  text(doc, 'SERVICIOS', 19, 79.5, { size: 7.2, weight: 'bold', tone: COLORS.white });
+  text(doc, 'INCLUIDO', 168, 79.5, { size: 7.2, weight: 'bold', tone: COLORS.lime, align: 'center' });
+  const services = [
+    'Visita tecnica y levantamiento en sitio',
+    'Ingenieria del sistema y diseño personalizado',
+    'Instalacion profesional y puesta en marcha',
+    'Gestion del tramite ante CFE (interconexion)',
+    'Monitoreo del sistema 24/7 via internet',
+  ];
+  services.forEach((service, index) => serviceRow(doc, 85 + index * 8.2, index, service));
+
+  rounded(doc, 14, 130, 182, 10, COLORS.teal, 2);
+  text(doc, 'COMPONENTE', 19, 136.5, { size: 7.2, weight: 'bold', tone: COLORS.white });
+  text(doc, 'ESPECIFICACION / MODELO', 74, 136.5, { size: 7.2, weight: 'bold', tone: COLORS.white });
+  text(doc, 'CANTIDAD', 190, 136.5, { size: 7.2, weight: 'bold', tone: COLORS.white, align: 'right' });
+
+  const module = quote.solar_modules ?? quote.configuration_snapshot?.module ?? {};
+  const inverter = quote.solar_inverters ?? quote.configuration_snapshot?.inverter ?? m.result.inverter ?? {};
+  const inverterCapacity = n(inverter.ac_capacity_kw ?? inverter.acCapacityKw);
+  const inverterQty = n(quote.inverter_quantity ?? inverter.quantity ?? m.result.inverterQuantity, 1);
+  const inverterLoading = n(quote.inverter_loading_percent ?? inverter.loadingPercent ?? m.result.inverterLoadingPercent);
+  const moduleModel = clean(module.model, 'Panel fotovoltaico');
+  const panelSpecification = `${clean(module.brand, 'Panel')} ${moduleModel}${moduleModel.includes(String(n(module.watts))) ? '' : ` · ${n(module.watts)} W`}`;
+  const componentRows = [
+    ['Panel solar', panelSpecification, `${n(quote.panel_count ?? m.result.panelCount)}`],
+    ['Inversor', `${clean(inverter.brand, 'Por confirmar')} ${clean(inverter.model, '')} · ${NUM.format(inverterCapacity)} kW AC`, `${inverterQty}`],
+    ['Relacion DC/AC', `${inverterLoading ? `${NUM.format(inverterLoading)}% de carga` : 'Por validar'} · limite configurado 120%`, 'Validada'],
+    ['Estructura y material electrico', 'Montaje, cableado, protecciones y puesta a tierra', 'Completo'],
+  ];
+  componentRows.forEach((row, index) => detailRow(doc, 142 + index * 10.2, index, row));
+
+  rounded(doc, 14, 187, 104, 34, COLORS.mist, 3, COLORS.line);
+  text(doc, 'ALCANCE LLAVE EN MANO', 20, 196, { size: 7.2, weight: 'bold', tone: COLORS.navy });
+  text(doc, 'Materiales, instalacion, ingenieria, puesta en marcha y gestion de interconexion. Equipos sujetos a disponibilidad al confirmar el proyecto.', 20, 204, { size: 6.4, tone: COLORS.slate, maxWidth: 90, lineHeight: 1.2 });
+  const financing = m.result.financing;
+  const financingName = financing ? clean(financing.name).replace(/\s\?\s/g, ' - ') : '';
+  text(doc, financing ? `Forma de pago: ${financingName}` : 'Forma de pago: segun la opcion comercial seleccionada.', 20, 217, { size: 6.4, weight: 'bold', tone: COLORS.teal, maxWidth: 90 });
+  const subtotalBeforeVat = m.total / 1.16;
+  const vatIncluded = m.total - subtotalBeforeVat;
+  rounded(doc, 123, 187, 73, 34, COLORS.navy, 3);
+  text(doc, 'Subtotal antes de IVA', 129, 195, { size: 6.2, tone: '#cad7e2' });
+  text(doc, MXN.format(subtotalBeforeVat), 190, 195, { size: 7, weight: 'bold', tone: COLORS.white, align: 'right' });
+  text(doc, 'IVA incluido', 129, 203, { size: 6.2, tone: '#cad7e2' });
+  text(doc, MXN.format(vatIncluded), 190, 203, { size: 7, weight: 'bold', tone: COLORS.white, align: 'right' });
+  line(doc, 129, 207, 190, 207, '#49627a', 0.3);
+  text(doc, 'TOTAL', 129, 216, { size: 8, weight: 'bold', tone: COLORS.lime });
+  text(doc, MXN.format(m.total), 190, 216, { size: 13, weight: 'bold', tone: COLORS.white, align: 'right' });
+
+  text(doc, 'TERMINOS Y CONDICIONES', 14, 232, { size: 9.5, weight: 'bold', tone: COLORS.navy });
+  line(doc, 14, 236, 196, 236, COLORS.amber, 0.7);
+  text(doc, 'Esta es una precotizacion sujeta a levantamiento fisico en sitio. El precio y el resultado pueden ajustarse al validar techo, sombras, tablero, canalizaciones y distancias. No incluye UVIE, Unidad de Inspeccion ni trabajos especiales no identificados en esta etapa.', 14, 243, { size: 6.6, tone: COLORS.slate, maxWidth: 182, lineHeight: 1.28 });
+
+  rounded(doc, 14, 258, 182, 16, COLORS.mist, 3, COLORS.line);
+  text(doc, 'DEDUCCION DE ISR', 20, 268, { size: 10.5, weight: 'bold', tone: COLORS.navy });
+  rounded(doc, 75, 260.5, 30, 11, COLORS.lime, 2);
+  text(doc, '100%', 90, 268.5, { size: 14, weight: 'bold', tone: COLORS.navy, align: 'center' });
+  text(doc, 'Para negocios, la inversion puede ser deducible conforme a requisitos fiscales vigentes. Consulta a tu asesor fiscal.', 111, 264, { size: 5.7, tone: COLORS.slate, maxWidth: 78, lineHeight: 1.18 });
+}
+
 export async function createSolarQuotePdf(quote, providedAssets = {}) {
   const [{ jsPDF }, logoData, ciaeData] = await Promise.all([
     import('jspdf'),
@@ -360,7 +454,7 @@ export async function createSolarQuotePdf(quote, providedAssets = {}) {
   doc.addPage();
   drawPageTwo(doc, quote, assets, metrics);
   doc.addPage();
-  drawPageThree(doc, quote, assets, metrics);
+  drawPageThreeDetailed(doc, quote, assets, metrics);
   return doc;
 }
 
