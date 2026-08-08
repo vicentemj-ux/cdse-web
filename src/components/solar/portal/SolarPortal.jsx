@@ -7,6 +7,12 @@ import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '..
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import { calculateInverterSizing, selectSuggestedInverter } from '../../../lib/solar/inverter-sizing.mjs';
 import {
+  downloadAuthorizationLetter,
+  downloadDossierIndex,
+  downloadSiteSurveyReport,
+  exportProjectDossierZip,
+} from '../../../lib/solar/project-documents.js';
+import {
   getSupabaseClient,
   getSupabaseFunctionsUrl,
   hasSupabaseConfig,
@@ -163,6 +169,13 @@ function normalizePhone(value) {
   return value?.startsWith('+') ? `+${digits}` : '';
 }
 
+function formatBytes(value) {
+  const bytes = Number(value ?? 0);
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${number.format(bytes / 1024)} KB`;
+  return `${number.format(bytes / 1024 ** 2)} MB`;
+}
+
 function errorMessage(error) {
   const raw = error?.message?.replace(/^.*?:\s*/, '') || '';
   const operationalMessages = {
@@ -172,6 +185,8 @@ function errorMessage(error) {
     INVERTER_OVERPRODUCTION_LIMIT_EXCEEDED: 'La relación DC/AC supera 120%. Ajusta potencia o cantidad de inversores antes de continuar.',
     PROJECT_NOT_READY_FOR_CFE: 'El proyecto no puede marcarse listo para CFE: deben estar aprobados el levantamiento, la ingeniería y todos los documentos base.',
     CFE_TRACKING_FOLIO_REQUIRED: 'Para marcar el proyecto como ingresado a CFE debes registrar el folio de seguimiento.',
+    SITE_SURVEY_REQUIRED: 'Primero captura el levantamiento técnico para poder generar su reporte.',
+    DOSSIER_TOO_LARGE_FOR_MOBILE: 'El expediente supera 125 MB. Expórtalo desde una computadora para evitar que el navegador móvil se cierre.',
   };
   return operationalMessages[raw] ?? (raw || 'Ocurrió un error inesperado.');
 }
@@ -992,6 +1007,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
   const [operationsForm, setOperationsForm] = useState(null);
   const [surveyForm, setSurveyForm] = useState(null);
   const [engineeringForm, setEngineeringForm] = useState(null);
+  const [exportProgress, setExportProgress] = useState(null);
   const [message, setMessage] = useState('');
   useEffect(() => {
     if (openProjectId) setSelectedId(openProjectId);
@@ -1000,6 +1016,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
     setSurveyForm(null);
     setEngineeringForm(null);
     setOperationsForm(null);
+    setExportProgress(null);
   }, [selectedId]);
   const normalizedSearch = search.trim().toLowerCase();
   const visibleProjects = data.projects.filter((project) => {
@@ -1075,7 +1092,15 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
   }
 
   async function openProjectFile(file) {
-    const { data: signed, error } = await getSupabaseClient().storage
+    const client = getSupabaseClient();
+    const { error: auditError } = await client.rpc('log_solar_project_access', {
+      p_project_id: file.project_id,
+      p_action: 'document_opened',
+      p_document_id: file.document_id,
+      p_metadata: { fileId: file.id, originalName: file.original_name },
+    });
+    if (auditError) return setMessage(errorMessage(auditError));
+    const { data: signed, error } = await client.storage
       .from('solar-projects')
       .createSignedUrl(file.storage_path, 300);
     if (error) return setMessage(errorMessage(error));
@@ -1293,6 +1318,73 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
     await refresh();
   }
 
+  async function generateProjectResource(kind) {
+    const project = { ...selected, _profileMap: data.profileMap };
+    const actions = {
+      survey: {
+        audit: 'site_survey_report_generated',
+        run: () => downloadSiteSurveyReport(project),
+        success: 'Reporte de levantamiento descargado.',
+      },
+      authorization: {
+        audit: 'authorization_template_generated',
+        run: () => downloadAuthorizationLetter(project),
+        success: 'Carta de autorización generada. Recuerda validar si aplica antes de firmarla.',
+      },
+      index: {
+        audit: 'dossier_index_generated',
+        run: () => downloadDossierIndex(project),
+        success: 'Índice actualizado del expediente descargado.',
+      },
+    };
+    const action = actions[kind];
+    if (!action) return;
+    setBusyId(`resource-${kind}`);
+    setMessage('');
+    try {
+      await action.run();
+      const { error } = await getSupabaseClient().rpc('log_solar_project_access', {
+        p_project_id: selected.id,
+        p_action: action.audit,
+        p_document_id: null,
+        p_metadata: { projectFolio: selected.folio },
+      });
+      if (error) throw error;
+      setMessage(action.success);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function exportDossier() {
+    setBusyId('resource-export');
+    setMessage('');
+    setExportProgress({ current: 0, total: 1, label: 'Preparando expediente privado' });
+    const client = getSupabaseClient();
+    try {
+      const result = await exportProjectDossierZip(
+        { ...selected, _profileMap: data.profileMap },
+        client,
+        setExportProgress,
+      );
+      const { error } = await client.rpc('log_solar_project_access', {
+        p_project_id: selected.id,
+        p_action: 'dossier_exported',
+        p_document_id: null,
+        p_metadata: { fileCount: result.fileCount, totalBytes: result.totalBytes },
+      });
+      if (error) throw error;
+      setMessage(`Expediente privado exportado con ${result.fileCount} archivo${result.fileCount === 1 ? '' : 's'} fuente.`);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setBusyId('');
+      setTimeout(() => setExportProgress(null), 1800);
+    }
+  }
+
   const requiredChecklist = selected?.solar_project_checklist_items?.filter((item) => item.required) ?? [];
   const completedChecklist = requiredChecklist.filter((item) => item.status === 'complete').length;
   const integrity = requiredChecklist.length
@@ -1320,6 +1412,9 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
   const engineeringRatio = engineeringForm?.systemDcKw && engineeringForm?.inverterAcKw
     ? Number(engineeringForm.systemDcKw) / Number(engineeringForm.inverterAcKw) * 100
     : 0;
+  const projectFiles = (selected?.solar_project_documents ?? [])
+    .flatMap((document) => document.solar_project_document_files ?? []);
+  const projectFileBytes = projectFiles.reduce((sum, file) => sum + Number(file.file_size_bytes ?? 0), 0);
 
   return (
     <section className="sp-view">
@@ -1476,6 +1571,21 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
               </div>
               <div className="sp-form-actions"><button className="sp-button sp-button--secondary" name="intent" value="draft" disabled={busyId === 'engineering'}>Guardar borrador</button><button className="sp-button sp-button--primary" name="intent" value="submit" disabled={busyId === 'engineering' || engineeringRatio > 120}>Enviar a revisión</button></div>
             </form>}
+
+            <section className="sp-project-resources">
+              <header>
+                <div><p className="sp-section-number">RECURSOS / EXPORTACIÓN</p><h2>La carpeta lista para trabajar.</h2></div>
+                <p>{projectFiles.length} archivo{projectFiles.length === 1 ? '' : 's'} · {formatBytes(projectFileBytes)} en almacenamiento privado</p>
+              </header>
+              <div className="sp-resource-ledger">
+                <button type="button" onClick={() => generateProjectResource('survey')} disabled={!latestSurvey || Boolean(busyId)}><span>01</span><strong>Reporte de levantamiento</strong><small>{latestSurvey ? `Genera la versión ${latestSurvey.version} con datos de campo y firmas.` : 'Disponible después de capturar la visita.'}</small></button>
+                <button type="button" onClick={() => generateProjectResource('authorization')} disabled={Boolean(busyId)}><span>02</span><strong>Carta de autorización</strong><small>Formato condicional precargado para gestión ante CFE.</small></button>
+                <button type="button" onClick={() => generateProjectResource('index')} disabled={Boolean(busyId)}><span>03</span><strong>Índice del expediente</strong><small>Estados, versiones, origen y archivos anexos.</small></button>
+                <button type="button" className="is-export" onClick={exportDossier} disabled={Boolean(busyId)}><span>04</span><strong>Exportar expediente ZIP</strong><small>Documentos, reportes, manifiesto y huellas SHA-256.</small></button>
+              </div>
+              {exportProgress && <div className="sp-export-progress" role="status" aria-live="polite"><div><strong>{exportProgress.label}</strong><span>{exportProgress.current} de {exportProgress.total}</span></div><i><b style={{ width: `${Math.min(100, exportProgress.current / Math.max(exportProgress.total, 1) * 100)}%` }} /></i></div>}
+              <p className="sp-privacy-note"><strong>Expediente privado:</strong> el ZIP se arma en este dispositivo usando enlaces temporales. No genera una carpeta pública ni debe reenviarse por enlaces abiertos. La descarga queda registrada en la bitácora del proyecto.</p>
+            </section>
           </section>
 
           <div className="sp-project-columns">

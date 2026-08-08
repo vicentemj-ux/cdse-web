@@ -410,6 +410,29 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-engineering-ratio strong { font-family: "Newsreader", serif; font-size: 2rem; }
 .sp-engineering-ratio strong.is-over { color: var(--sp-danger); }
 .sp-engineering-ratio small { color: var(--sp-muted); font-size: .7rem; }
+.sp-project-resources { margin-top: 3.5rem; padding-top: 1.25rem; border-top: 1px solid var(--sp-ink); }
+.sp-project-resources > header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; }
+.sp-project-resources > header h2 { margin: .4rem 0 0; font-family: "Newsreader", serif; font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1; }
+.sp-project-resources > header > p { margin: 0; color: var(--sp-muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.sp-resource-ledger { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 1.75rem; border-block: 1px solid var(--sp-line); }
+.sp-resource-ledger button { position: relative; min-height: 9.5rem; display: grid; align-content: start; gap: .45rem; border: 0; padding: 1.25rem 1rem 1.25rem 2.5rem; color: var(--sp-ink); background: transparent; text-align: left; cursor: pointer; }
+.sp-resource-ledger button + button { border-left: 1px solid var(--sp-line); }
+.sp-resource-ledger button:hover:not(:disabled) { background: color-mix(in oklch, var(--sp-blue) 5%, var(--sp-paper)); }
+.sp-resource-ledger button.is-export { color: var(--sp-white); background: var(--sp-navy); }
+.sp-resource-ledger button.is-export:hover:not(:disabled) { background: var(--sp-blue); }
+.sp-resource-ledger button:disabled { cursor: not-allowed; opacity: .42; }
+.sp-resource-ledger span { position: absolute; top: 1.35rem; left: .85rem; color: var(--sp-blue); font-size: .62rem; font-weight: 850; }
+.sp-resource-ledger .is-export span { color: var(--sp-sun); }
+.sp-resource-ledger strong, .sp-resource-ledger small { display: block; }
+.sp-resource-ledger strong { font-family: "Newsreader", serif; font-size: 1.25rem; line-height: 1.08; }
+.sp-resource-ledger small { color: var(--sp-muted); font-size: .68rem; line-height: 1.5; }
+.sp-resource-ledger .is-export small { color: color-mix(in oklch, var(--sp-white) 68%, transparent); }
+.sp-export-progress { margin-top: 1rem; }
+.sp-export-progress > div { display: flex; justify-content: space-between; gap: 1rem; font-size: .7rem; }
+.sp-export-progress span { color: var(--sp-muted); font-variant-numeric: tabular-nums; }
+.sp-export-progress i { height: .28rem; display: block; overflow: hidden; margin-top: .55rem; background: var(--sp-line); }
+.sp-export-progress b { height: 100%; display: block; background: var(--sp-blue); transition: width .22s ease-out; }
+.sp-privacy-note { max-width: 66rem; margin: 1rem 0 0; color: var(--sp-muted); font-size: .68rem; line-height: 1.55; }
 .sp-agenda { display: grid; gap: clamp(2.5rem, 5vw, 5rem); margin-top: 3.5rem; }
 .sp-agenda-group { border-top: 1px solid var(--sp-ink); }
 .sp-agenda-group > header { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 0; }
@@ -452,6 +475,9 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-project-facts > div:nth-child(4) { border-top: 1px solid var(--sp-line); }
   .sp-form-grid--technical { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sp-form-grid--technical .sp-field--wide { grid-column: 1 / -1; }
+  .sp-resource-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sp-resource-ledger button:nth-child(3) { border-top: 1px solid var(--sp-line); border-left: 0; }
+  .sp-resource-ledger button:nth-child(4) { border-top: 1px solid var(--sp-line); }
   .sp-quote-summary { position: static; }
 }
 
@@ -514,6 +540,10 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-engineering-ratio small { grid-column: 1 / -1; }
   .sp-form-actions { display: grid; grid-template-columns: 1fr; }
   .sp-form-actions .sp-button { width: 100%; min-height: 3rem; }
+  .sp-project-resources > header { align-items: start; flex-direction: column; gap: .8rem; }
+  .sp-resource-ledger { grid-template-columns: 1fr; }
+  .sp-resource-ledger button + button, .sp-resource-ledger button:nth-child(3), .sp-resource-ledger button:nth-child(4) { border-top: 1px solid var(--sp-line); border-left: 0; }
+  .sp-resource-ledger button { min-height: 7.5rem; }
   .sp-agenda-row { grid-template-columns: 1fr; gap: .6rem; padding: 1rem 0; }
   .sp-agenda-actions { grid-column: 1; }
 }

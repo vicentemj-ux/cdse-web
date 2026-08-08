@@ -282,7 +282,7 @@ function drawProjection(doc, x, y, w, h, m) {
     fill(doc, index === 4 ? COLORS.lime : COLORS.navy);
     doc.rect(barX, y + h - barH, barW, barH, 'F');
     text(doc, MXN.format(value), barX + barW / 2, y + h - barH - 3, { size: 5.4, weight: 'bold', tone: COLORS.navy, align: 'center' });
-    text(doc, `Ano ${index + 1}`, barX + barW / 2, y + h + 6, { size: 5.8, tone: COLORS.slate, align: 'center' });
+    text(doc, `Año ${index + 1}`, barX + barW / 2, y + h + 6, { size: 5.8, tone: COLORS.slate, align: 'center' });
   });
 }
 

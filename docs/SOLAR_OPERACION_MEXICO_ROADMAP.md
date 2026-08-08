@@ -5,10 +5,10 @@ Fecha de corte: 8 de agosto de 2026.
 ## Estado de implementación
 
 - **Fase 1 — núcleo de proyecto:** implementada y desplegada. Una cotización aceptada crea proyecto, expediente, tareas y comisión calculada antes de IVA.
-- **Fase 2 — expediente e ingeniería:** en construcción. Ya están desplegados el almacenamiento privado, carga múltiple por requisito, versiones de reemplazo, revisión administrativa, rechazo con motivo, requisitos condicionales, levantamiento técnico estructurado y revisiones formales de ingeniería.
+- **Fase 2 — expediente e ingeniería:** implementada y desplegada. Incluye almacenamiento privado, carga múltiple, versiones, revisión administrativa, requisitos condicionales, levantamiento estructurado, ingeniería formal, recursos PDF y exportación integral.
 - **Puerta técnica desplegada:** el sistema exige visita aprobada, ingeniería aprobada y documentos base completos antes de permitir el estado `ready_for_submission`; para `submitted_to_cfe` exige además folio de seguimiento.
-- **Pendiente para cerrar Fase 2:** plantillas descargables, generación del reporte de levantamiento, índice y exportación integral del expediente.
-- **Fases 3 a 6:** pendientes según el orden definido en este documento.
+- **Recursos desplegados:** reporte de levantamiento, carta de autorización condicional, índice documental y ZIP privado con archivos, versiones, manifiesto y huellas SHA-256. La generación y las aperturas quedan auditadas.
+- **Siguiente hito:** Fase 3 — venta, cobros y comisiones. Las fases 3 a 6 continúan pendientes según el orden definido en este documento.
 
 ## 1. Objetivo
 
