@@ -883,11 +883,14 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
   );
 }
 
-function Projects({ data, refresh }) {
+function Projects({ data, refresh, isAdmin, profile }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(data.projects[0]?.id ?? null);
   const [busyId, setBusyId] = useState('');
+  const [uploadingId, setUploadingId] = useState('');
+  const [taskForm, setTaskForm] = useState(null);
+  const [operationsForm, setOperationsForm] = useState(null);
   const [message, setMessage] = useState('');
   const normalizedSearch = search.trim().toLowerCase();
   const visibleProjects = data.projects.filter((project) => {
@@ -915,13 +918,144 @@ function Projects({ data, refresh }) {
   async function completeTask(task) {
     setBusyId(task.id);
     setMessage('');
-    const { error } = await getSupabaseClient()
-      .from('solar_project_tasks')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', task.id);
+    const { error } = await getSupabaseClient().rpc('complete_solar_project_task', {
+      p_task_id: task.id,
+    });
     setBusyId('');
     if (error) return setMessage(errorMessage(error));
     setMessage('Tarea completada y registrada en el proyecto.');
+    await refresh();
+  }
+
+  async function uploadDocument(document, files) {
+    const selectedFiles = Array.from(files ?? []);
+    if (!selectedFiles.length) return;
+    const invalidFile = selectedFiles.find((file) => !['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15728640);
+    if (invalidFile) {
+      return setMessage(`${invalidFile.name}: usa PDF, JPG, PNG o WEBP de máximo 15 MB.`);
+    }
+    setUploadingId(document.id);
+    setMessage('');
+    const client = getSupabaseClient();
+    for (const file of selectedFiles) {
+      const safeName = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-120);
+      const storagePath = `${document.project_id}/${document.document_code}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+      const { error: uploadError } = await client.storage.from('solar-projects').upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) {
+        setUploadingId('');
+        return setMessage(errorMessage(uploadError));
+      }
+      const { error: registerError } = await client.rpc('register_solar_project_document_upload', {
+        p_document_id: document.id,
+        p_storage_path: storagePath,
+        p_mime_type: file.type,
+        p_file_size_bytes: file.size,
+        p_original_name: file.name,
+      });
+      if (registerError) {
+        setUploadingId('');
+        return setMessage(errorMessage(registerError));
+      }
+    }
+    setUploadingId('');
+    setMessage(`${selectedFiles.length} archivo${selectedFiles.length === 1 ? '' : 's'} agregado${selectedFiles.length === 1 ? '' : 's'} al expediente.`);
+    await refresh();
+  }
+
+  async function openProjectFile(file) {
+    const { data: signed, error } = await getSupabaseClient().storage
+      .from('solar-projects')
+      .createSignedUrl(file.storage_path, 300);
+    if (error) return setMessage(errorMessage(error));
+    window.open(signed.signedUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  async function reviewDocument(document, decision) {
+    let reason = null;
+    if (decision === 'rejected') {
+      reason = window.prompt('Indica exactamente qué debe corregirse:')?.trim();
+      if (!reason) return;
+    }
+    setBusyId(document.id);
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('review_solar_project_document', {
+      p_document_id: document.id,
+      p_decision: decision,
+      p_rejection_reason: reason,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage(decision === 'approved' ? 'Documento aprobado y requisito completado.' : 'Documento rechazado; la corrección quedó registrada.');
+    await refresh();
+  }
+
+  async function setApplicability(document, applies) {
+    setBusyId(document.id);
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('set_solar_document_applicability', {
+      p_document_id: document.id,
+      p_applies: applies,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage(applies ? 'El requisito condicional ahora es obligatorio.' : 'El requisito quedó marcado como no aplicable.');
+    await refresh();
+  }
+
+  async function createTask(event) {
+    event.preventDefault();
+    if (!taskForm || !selected) return;
+    setBusyId('new-task');
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('create_solar_project_task', {
+      p_project_id: selected.id,
+      p_title: taskForm.title,
+      p_task_type: taskForm.type,
+      p_due_at: taskForm.dueAt ? new Date(taskForm.dueAt).toISOString() : null,
+      p_assigned_to: taskForm.assignedTo || null,
+      p_priority: taskForm.priority,
+      p_description: taskForm.description || null,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setTaskForm(null);
+    setMessage('Compromiso agregado a la agenda del proyecto.');
+    await refresh();
+  }
+
+  function beginOperationsUpdate() {
+    setOperationsForm({
+      status: selected.status,
+      health: selected.health,
+      nextAction: selected.next_action ?? '',
+      blockedReason: selected.blocked_reason ?? '',
+      cfeFolio: selected.cfe_tracking_folio ?? '',
+      siteSurveyAt: selected.target_site_survey_at?.slice(0, 16) ?? '',
+      installationAt: selected.target_installation_at?.slice(0, 16) ?? '',
+    });
+  }
+
+  async function updateOperations(event) {
+    event.preventDefault();
+    setBusyId('operations');
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('update_solar_project_operations', {
+      p_project_id: selected.id,
+      p_status: operationsForm.status,
+      p_health: operationsForm.health,
+      p_next_action: operationsForm.nextAction,
+      p_blocked_reason: operationsForm.blockedReason || null,
+      p_cfe_tracking_folio: operationsForm.cfeFolio || null,
+      p_target_site_survey_at: operationsForm.siteSurveyAt ? new Date(operationsForm.siteSurveyAt).toISOString() : null,
+      p_target_installation_at: operationsForm.installationAt ? new Date(operationsForm.installationAt).toISOString() : null,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setOperationsForm(null);
+    setMessage('Etapa, salud y próximos compromisos actualizados.');
     await refresh();
   }
 
@@ -977,11 +1111,25 @@ function Projects({ data, refresh }) {
         {selected && <article className="sp-project" id="project-detail">
           <header className="sp-project-hero">
             <div><p className="sp-section-number">{selected.folio} / {PROJECT_STATUS_LABELS[selected.status]}</p><h2>{selected.customer_name}</h2><p>{selected.next_action ?? 'Define la siguiente acción del proyecto.'}</p></div>
-            <div className="sp-project-score"><strong>{integrity}%</strong><span>expediente requerido completo</span></div>
+            <div className="sp-project-score"><strong>{integrity}%</strong><span>expediente requerido completo</span>{isAdmin && <button type="button" className="sp-text-button" onClick={beginOperationsUpdate}>Actualizar control</button>}</div>
           </header>
 
           {message && <p className="sp-inline-notice">{message}</p>}
           {selected.blocked_reason && <p className="sp-inline-notice sp-inline-notice--warning"><strong>Bloqueo:</strong> {selected.blocked_reason}</p>}
+
+          {operationsForm && <form className="sp-operations-form" onSubmit={updateOperations}>
+            <div className="sp-subhead"><h2>Control operativo</h2><button type="button" onClick={() => setOperationsForm(null)}>Cancelar</button></div>
+            <div className="sp-form-grid">
+              <label className="sp-field"><span>Etapa</span><select value={operationsForm.status} onChange={(event) => setOperationsForm({ ...operationsForm, status: event.target.value })}>{Object.entries(PROJECT_STATUS_LABELS).map(([status, label]) => <option key={status} value={status}>{label}</option>)}</select></label>
+              <label className="sp-field"><span>Salud</span><select value={operationsForm.health} onChange={(event) => setOperationsForm({ ...operationsForm, health: event.target.value })}>{Object.entries(PROJECT_HEALTH_LABELS).map(([health, label]) => <option key={health} value={health}>{label}</option>)}</select></label>
+              <label className="sp-field sp-field--wide"><span>Próxima acción</span><input value={operationsForm.nextAction} onChange={(event) => setOperationsForm({ ...operationsForm, nextAction: event.target.value })} placeholder="Acción concreta, responsable y resultado esperado" /></label>
+              {operationsForm.health === 'blocked' && <label className="sp-field sp-field--wide"><span>Motivo del bloqueo</span><input required value={operationsForm.blockedReason} onChange={(event) => setOperationsForm({ ...operationsForm, blockedReason: event.target.value })} /></label>}
+              <label className="sp-field"><span>Folio CFE</span><input value={operationsForm.cfeFolio} onChange={(event) => setOperationsForm({ ...operationsForm, cfeFolio: event.target.value })} placeholder="Pendiente de ingreso" /></label>
+              <label className="sp-field"><span>Visita técnica</span><input type="datetime-local" value={operationsForm.siteSurveyAt} onChange={(event) => setOperationsForm({ ...operationsForm, siteSurveyAt: event.target.value })} /></label>
+              <label className="sp-field"><span>Instalación objetivo</span><input type="datetime-local" value={operationsForm.installationAt} onChange={(event) => setOperationsForm({ ...operationsForm, installationAt: event.target.value })} /></label>
+            </div>
+            <button className="sp-button sp-button--primary" disabled={busyId === 'operations'}>{busyId === 'operations' ? 'Guardando…' : 'Guardar control operativo'}</button>
+          </form>}
 
           <div className="sp-project-facts">
             <div><span>Inversión acordada</span><strong>{money.format(Number(selected.agreed_total_mxn))}</strong></div>
@@ -1000,11 +1148,21 @@ function Projects({ data, refresh }) {
                   if (!stageDocuments.length) return null;
                   return <div className="sp-dossier-stage" key={stage}>
                     <h3>{label}</h3>
-                    {stageDocuments.map((document) => <div className="sp-document-row" key={document.id}>
-                      <span className={`sp-document-state sp-document-state--${document.status}`} aria-hidden="true" />
-                      <div><strong>{document.title}</strong><small>{document.solar_document_requirements?.requirement_scope === 'conditional' ? 'Condicional' : document.solar_document_requirements?.requirement_scope === 'regulatory' ? 'Regulatorio' : 'Control CDSE'}</small></div>
-                      <b>{document.status === 'approved' ? 'Aprobado' : document.status === 'uploaded' ? 'Por revisar' : document.status === 'not_applicable' ? 'No aplica' : 'Pendiente'}</b>
-                    </div>)}
+                    {stageDocuments.map((document) => {
+                      const files = document.solar_project_document_files ?? [];
+                      const isConditional = document.solar_document_requirements?.requirement_scope === 'conditional';
+                      return <div className="sp-document-row" key={document.id}>
+                        <span className={`sp-document-state sp-document-state--${document.status}`} aria-hidden="true" />
+                        <div className="sp-document-copy"><strong>{document.title}</strong><small>{isConditional ? 'Condicional' : document.solar_document_requirements?.requirement_scope === 'regulatory' ? 'Regulatorio' : 'Control CDSE'} · {document.status === 'approved' ? 'Aprobado' : document.status === 'uploaded' ? 'Por revisar' : document.status === 'rejected' ? `Corregir: ${document.rejection_reason}` : document.status === 'not_applicable' ? 'No aplica' : 'Pendiente'}</small>
+                          {files.length > 0 && <div className="sp-file-list">{files.map((file) => <button type="button" key={file.id} onClick={() => openProjectFile(file)}>{file.original_name}</button>)}</div>}
+                        </div>
+                        <div className="sp-document-actions">
+                          {document.status !== 'not_applicable' && <label className="sp-upload-action">{uploadingId === document.id ? 'Subiendo…' : files.length ? 'Agregar archivo' : 'Subir archivo'}<input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" disabled={Boolean(uploadingId)} onChange={(event) => { uploadDocument(document, event.target.files); event.target.value = ''; }} /></label>}
+                          {isAdmin && document.status === 'uploaded' && <><button type="button" onClick={() => reviewDocument(document, 'approved')} disabled={busyId === document.id}>Aprobar</button><button type="button" onClick={() => reviewDocument(document, 'rejected')} disabled={busyId === document.id}>Rechazar</button></>}
+                          {isAdmin && isConditional && <button type="button" onClick={() => setApplicability(document, document.status === 'not_applicable')} disabled={busyId === document.id}>{document.status === 'not_applicable' ? 'Requerir' : 'No aplica'}</button>}
+                        </div>
+                      </div>;
+                    })}
                   </div>;
                 })}
               </div>
@@ -1012,10 +1170,20 @@ function Projects({ data, refresh }) {
 
             <aside className="sp-project-agenda">
               <p className="sp-section-number">PRÓXIMAS ACCIONES</p>
-              <h2>Agenda del proyecto</h2>
+              <div className="sp-subhead"><h2>Agenda del proyecto</h2><button type="button" onClick={() => setTaskForm(taskForm ? null : { title: '', type: 'follow_up', dueAt: '', assignedTo: selected.seller_user_id ?? profile.user_id, priority: 'normal', description: '' })}>{taskForm ? 'Cancelar' : '+ Agregar'}</button></div>
+              {taskForm && <form className="sp-task-form" onSubmit={createTask}>
+                <label className="sp-field"><span>Compromiso</span><input required value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} placeholder="Ej. Recibir identificación del titular" /></label>
+                <div className="sp-form-grid">
+                  <label className="sp-field"><span>Tipo</span><select value={taskForm.type} onChange={(event) => setTaskForm({ ...taskForm, type: event.target.value })}><option value="follow_up">Seguimiento</option><option value="site_survey">Visita técnica</option><option value="customer_document">Documento del cliente</option><option value="engineering_review">Revisión de ingeniería</option><option value="cfe_submission">Ingreso CFE</option><option value="cfe_follow_up">Seguimiento CFE</option><option value="installation">Instalación</option><option value="inspection">Inspección/pruebas</option><option value="meter_change">Cambio de medidor</option><option value="commissioning">Puesta en marcha</option><option value="collection">Cobro</option><option value="warranty">Garantía</option><option value="other">Otro</option></select></label>
+                  <label className="sp-field"><span>Prioridad</span><select value={taskForm.priority} onChange={(event) => setTaskForm({ ...taskForm, priority: event.target.value })}><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option></select></label>
+                  <label className="sp-field sp-field--wide"><span>Fecha y hora</span><input type="datetime-local" value={taskForm.dueAt} onChange={(event) => setTaskForm({ ...taskForm, dueAt: event.target.value })} /></label>
+                  {isAdmin && <label className="sp-field sp-field--wide"><span>Responsable</span><select value={taskForm.assignedTo} onChange={(event) => setTaskForm({ ...taskForm, assignedTo: event.target.value })}>{data.profiles.filter((item) => item.active).map((item) => <option key={item.user_id} value={item.user_id}>{item.full_name}</option>)}</select></label>}
+                </div>
+                <button className="sp-button sp-button--secondary" disabled={busyId === 'new-task'}>{busyId === 'new-task' ? 'Agregando…' : 'Agregar a agenda'}</button>
+              </form>}
               {pendingTasks.length ? pendingTasks.map((task) => <div className="sp-task" key={task.id}>
                 <div><strong>{task.title}</strong><small>{task.due_at ? new Date(task.due_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin vencimiento'} · {data.profileMap[task.assigned_to]?.full_name ?? 'Sin asignar'}</small></div>
-                <button type="button" disabled={busyId === task.id} onClick={() => completeTask(task)}>{busyId === task.id ? '…' : 'Completar'}</button>
+                {(isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => completeTask(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}
               </div>) : <p className="sp-header-note">No hay tareas abiertas. El administrador puede programar la siguiente etapa.</p>}
             </aside>
           </div>
@@ -1311,7 +1479,7 @@ export default function SolarPortal() {
     const [quotes, projects, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
-        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*)').order('updated_at', { ascending: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
@@ -1418,7 +1586,7 @@ export default function SolarPortal() {
         {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
         {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
         {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
-        {view === 'projects' && <Projects data={data} refresh={() => load(session)} />}
+        {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}

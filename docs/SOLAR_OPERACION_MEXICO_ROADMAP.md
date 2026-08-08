@@ -2,6 +2,13 @@
 
 Fecha de corte: 8 de agosto de 2026.
 
+## Estado de implementación
+
+- **Fase 1 — núcleo de proyecto:** implementada y desplegada. Una cotización aceptada crea proyecto, expediente, tareas y comisión calculada antes de IVA.
+- **Fase 2 — expediente e ingeniería:** en construcción. Ya están desplegados el almacenamiento privado, carga múltiple por requisito, versiones de reemplazo, revisión administrativa, rechazo con motivo, requisitos condicionales y sincronización del checklist.
+- **Pendiente para cerrar Fase 2:** levantamiento técnico estructurado, revisiones formales de ingeniería, plantillas descargables e índice/exportación del expediente.
+- **Fases 3 a 6:** pendientes según el orden definido en este documento.
+
 ## 1. Objetivo
 
 Convertir el cotizador actual en el sistema de trabajo de CDSE para administrar de punta a punta:
