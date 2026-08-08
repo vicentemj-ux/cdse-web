@@ -1102,14 +1102,13 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
   }
 
   async function saveSchedule(schedule) {
-    const amountInput = document.getElementById(`schedule-amount-${schedule.id}`);
     const dueInput = document.getElementById(`schedule-due-${schedule.id}`);
     await run(`schedule-${schedule.id}`, async () => {
       const { error } = await getSupabaseClient().from('solar_payment_schedules').update({
-        amount_mxn: Number(amountInput.value), due_at: dueInput.value || null,
+        due_at: dueInput.value || null,
       }).eq('id', schedule.id);
       return error;
-    }, 'Calendario de cobro actualizado.');
+    }, 'Fecha de cobro actualizada. El importe permanece ligado a la propuesta aceptada.');
   }
 
   async function saveCommission(event) {
@@ -1191,7 +1190,7 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
             {schedules.sort((a, b) => a.sequence - b.sequence).map((schedule) => <article key={schedule.id}>
               <span className={`sp-finance-status sp-finance-status--${schedule.status}`}>{PAYMENT_STATUS_LABELS[schedule.status] ?? schedule.status}</span>
               <div><strong>{schedule.label}</strong><small>{money.format(Number(schedule.paid_amount_mxn))} aplicado</small></div>
-              {isAdmin ? <><input id={`schedule-amount-${schedule.id}`} aria-label={`Importe ${schedule.label}`} type="number" min={schedule.paid_amount_mxn} defaultValue={schedule.amount_mxn} /><input id={`schedule-due-${schedule.id}`} aria-label={`Vencimiento ${schedule.label}`} type="date" defaultValue={schedule.due_at ?? ''} /><button type="button" className="sp-text-button" disabled={busy === `schedule-${schedule.id}`} onClick={() => saveSchedule(schedule)}>Guardar</button></> : <><b>{money.format(Number(schedule.amount_mxn))}</b><time>{schedule.due_at ? new Date(`${schedule.due_at}T12:00:00`).toLocaleDateString('es-MX') : 'Sin fecha'}</time></>}
+              {isAdmin ? <><b>{money.format(Number(schedule.amount_mxn))}</b><input id={`schedule-due-${schedule.id}`} aria-label={`Vencimiento ${schedule.label}`} type="date" defaultValue={schedule.due_at ?? ''} /><button type="button" className="sp-text-button" disabled={busy === `schedule-${schedule.id}`} onClick={() => saveSchedule(schedule)}>Guardar fecha</button></> : <><b>{money.format(Number(schedule.amount_mxn))}</b><time>{schedule.due_at ? new Date(`${schedule.due_at}T12:00:00`).toLocaleDateString('es-MX') : 'Sin fecha'}</time></>}
             </article>)}
           </div>
           <form className="sp-payment-form" onSubmit={recordPayment}>

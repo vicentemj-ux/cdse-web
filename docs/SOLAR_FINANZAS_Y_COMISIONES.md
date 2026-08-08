@@ -36,8 +36,8 @@ El proyecto crea automáticamente:
 - enganche y liquidación por financiamiento, si la propuesta contiene enganche.
 
 Para proyectos históricos la migración crea el calendario con el snapshot que ya
-existía. Administración puede ajustar importe y vencimiento antes de registrar
-cobros.
+existía. Administración puede ajustar el vencimiento; el importe queda ligado a
+la propuesta aceptada y no se modifica silenciosamente desde el calendario.
 
 ### Al recibir dinero
 
