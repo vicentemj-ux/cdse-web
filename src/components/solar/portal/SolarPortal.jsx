@@ -82,6 +82,25 @@ const TECHNICAL_STATUS_LABELS = {
   approved: 'Aprobado',
   rejected: 'Requiere corrección',
 };
+const COMMISSION_STATUS_LABELS = {
+  estimated: 'Proyectada',
+  partially_earned: 'Devengada parcialmente',
+  earned: 'Devengada',
+  approved: 'Autorizada',
+  paid: 'Pagada',
+  void: 'Cancelada',
+};
+const PAYMENT_STATUS_LABELS = {
+  pending: 'Por conciliar',
+  reconciled: 'Conciliado',
+  rejected: 'Rechazado',
+  refunded: 'Reembolsado',
+  partially_paid: 'Pago parcial',
+  paid: 'Cubierto',
+  overdue: 'Vencido',
+  waived: 'Condonado',
+  cancelled: 'Cancelado',
+};
 const ROOF_TYPE_LABELS = {
   concrete_slab: 'Losa de concreto',
   metal_sheet: 'Lámina metálica',
@@ -187,6 +206,20 @@ function errorMessage(error) {
     CFE_TRACKING_FOLIO_REQUIRED: 'Para marcar el proyecto como ingresado a CFE debes registrar el folio de seguimiento.',
     SITE_SURVEY_REQUIRED: 'Primero captura el levantamiento técnico para poder generar su reporte.',
     DOSSIER_TOO_LARGE_FOR_MOBILE: 'El expediente supera 125 MB. Expórtalo desde una computadora para evitar que el navegador móvil se cierre.',
+    PAYMENT_AMOUNT_INVALID: 'Captura un importe de cobro mayor a cero.',
+    PAYMENT_SCHEDULE_INVALID: 'El concepto de cobro no pertenece a este proyecto.',
+    PENDING_PAYMENT_REQUIRED: 'Este movimiento ya fue revisado. Actualiza la pantalla para consultar su estado.',
+    REJECTION_REASON_REQUIRED: 'Explica por qué el comprobante de pago fue rechazado.',
+    COMMISSION_RATE_OUT_OF_RANGE: 'La comisión debe quedar entre 0% y 10%. Para autorizarla, la política normal es de 5% a 10%.',
+    ADJUSTMENT_REASON_REQUIRED: 'Todo ajuste manual de comisión requiere una justificación auditable.',
+    RECONCILED_PAYMENT_REQUIRED: 'Primero debe existir al menos un cobro conciliado para confirmar el hito de anticipo.',
+    APPROVED_HANDOVER_REQUIRED: 'Primero sube y aprueba el acta de entrega y puesta en marcha del proyecto.',
+    PENDING_MILESTONE_REQUIRED: 'Este hito ya fue confirmado.',
+    FULLY_EARNED_COMMISSION_REQUIRED: 'La comisión debe tener sus dos hitos completos antes de autorizarse.',
+    COMMISSION_POLICY_REVIEW_REQUIRED: 'Revisa la tasa: sólo se autoriza dentro de la política de 5% a 10%.',
+    SELF_APPROVAL_REASON_REQUIRED: 'Como administrador y vendedor del proyecto, debes documentar el motivo de autorización excepcional.',
+    APPROVED_COMMISSION_REQUIRED: 'La comisión debe estar autorizada antes de registrarla como pagada.',
+    PAYMENT_REFERENCE_REQUIRED: 'Captura la referencia bancaria o comprobante de pago de la comisión.',
   };
   return operationalMessages[raw] ?? (raw || 'Ocurrió un error inesperado.');
 }
@@ -265,7 +298,7 @@ function Login({ onSession }) {
             />
           </label>
           {message && <p className="sp-form-error" role="alert">{message}</p>}
-          <button className="sp-button sp-button--primary" disabled={busy || !periodHistory.ok} title={!periodHistory.ok ? 'Completa la captura manual asistida del historial para continuar.' : undefined}>
+          <button className="sp-button sp-button--primary" disabled={busy}>
             {busy ? 'Verificando…' : 'Entrar al cotizador'}
           </button>
         </form>
@@ -993,6 +1026,201 @@ function Agenda({ data, profile, isAdmin, refresh, onOpenProject }) {
           <div className="sp-agenda-actions"><button type="button" onClick={() => onOpenProject(task.project_id)}>Proyecto</button>{(isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => complete(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}</div>
         </article>) : <p>No hay compromisos en este bloque.</p>}
       </section>)}
+    </div>
+  </section>;
+}
+
+function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
+  const eligibleProjects = data.projects.filter((project) => isAdmin || project.seller_user_id === profile.user_id);
+  const [selectedId, setSelectedId] = useState(eligibleProjects[0]?.id ?? null);
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState('');
+  const [message, setMessage] = useState('');
+  const [paymentForm, setPaymentForm] = useState({ scheduleId: '', amount: '', receivedAt: new Date().toISOString().slice(0, 16), method: 'transfer', reference: '', notes: '' });
+  const [commissionForm, setCommissionForm] = useState({ rate: '', adjustment: '0', reason: '', approvalReason: '', paymentReference: '', payrollReference: '' });
+
+  const visible = eligibleProjects.filter((project) => {
+    const query = search.trim().toLowerCase();
+    return !query || `${project.folio} ${project.customer_name} ${project.solar_quotes?.folio ?? ''}`.toLowerCase().includes(query);
+  });
+  const selected = eligibleProjects.find((project) => project.id === selectedId) ?? visible[0] ?? null;
+  const schedules = selected?.solar_payment_schedules ?? [];
+  const payments = [...(selected?.solar_payments ?? [])].sort((a, b) => String(b.received_at).localeCompare(String(a.received_at)));
+  const commission = selected?.solar_commissions?.[0] ?? null;
+  const milestones = commission?.solar_commission_milestones ?? [];
+  const reconciled = payments.filter((item) => item.status === 'reconciled').reduce((sum, item) => sum + Number(item.amount_mxn), 0);
+  const totalPortfolio = eligibleProjects.reduce((sum, item) => sum + Number(item.agreed_total_mxn ?? 0), 0);
+  const collectedPortfolio = eligibleProjects.reduce((sum, item) => sum + (item.solar_payments ?? []).filter((payment) => payment.status === 'reconciled').reduce((subtotal, payment) => subtotal + Number(payment.amount_mxn), 0), 0);
+  const pendingCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && ['earned', 'approved'].includes(item.status)).reduce((sum, item) => sum + Number(item.payable_amount_mxn ?? 0), 0);
+  const paidCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && item.status === 'paid').reduce((sum, item) => sum + Number(item.payable_amount_mxn ?? 0), 0);
+
+  useEffect(() => {
+    if (!selected) return;
+    const nextCommission = selected.solar_commissions?.[0];
+    setCommissionForm({
+      rate: String(nextCommission?.rate_percent ?? ''),
+      adjustment: String(nextCommission?.adjustment_mxn ?? 0),
+      reason: nextCommission?.adjustment_reason ?? '',
+      approvalReason: '', paymentReference: '', payrollReference: '',
+    });
+    const firstPending = (selected.solar_payment_schedules ?? []).find((item) => !['paid', 'waived', 'cancelled'].includes(item.status));
+    setPaymentForm((current) => ({ ...current, scheduleId: firstPending?.id ?? '', amount: firstPending ? String(Math.max(Number(firstPending.amount_mxn) - Number(firstPending.paid_amount_mxn), 0)) : '' }));
+  }, [selectedId, selected?.updated_at]);
+
+  async function run(key, callback, success) {
+    setBusy(key); setMessage('');
+    const error = await callback();
+    setBusy('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage(success);
+    await refresh();
+  }
+
+  async function recordPayment(event) {
+    event.preventDefault();
+    await run('payment', async () => {
+      const { error } = await getSupabaseClient().rpc('record_solar_payment', {
+        p_project_id: selected.id,
+        p_schedule_id: paymentForm.scheduleId || null,
+        p_amount_mxn: Number(paymentForm.amount),
+        p_received_at: new Date(paymentForm.receivedAt).toISOString(),
+        p_payment_method: paymentForm.method,
+        p_reference: paymentForm.reference || null,
+        p_notes: paymentForm.notes || null,
+      });
+      return error;
+    }, 'Cobro registrado. Un administrador debe conciliarlo contra el movimiento bancario o comprobante.');
+  }
+
+  async function decidePayment(payment, decision) {
+    const reason = decision === 'rejected' ? window.prompt('Motivo del rechazo del comprobante:') : '';
+    if (decision === 'rejected' && !reason?.trim()) return;
+    await run(`payment-${payment.id}`, async () => {
+      const { error } = await getSupabaseClient().rpc('decide_solar_payment', { p_payment_id: payment.id, p_decision: decision, p_reason: reason || null });
+      return error;
+    }, decision === 'reconciled' ? 'Pago conciliado y saldo actualizado.' : 'Comprobante rechazado con motivo registrado.');
+  }
+
+  async function saveSchedule(schedule) {
+    const amountInput = document.getElementById(`schedule-amount-${schedule.id}`);
+    const dueInput = document.getElementById(`schedule-due-${schedule.id}`);
+    await run(`schedule-${schedule.id}`, async () => {
+      const { error } = await getSupabaseClient().from('solar_payment_schedules').update({
+        amount_mxn: Number(amountInput.value), due_at: dueInput.value || null,
+      }).eq('id', schedule.id);
+      return error;
+    }, 'Calendario de cobro actualizado.');
+  }
+
+  async function saveCommission(event) {
+    event.preventDefault();
+    await run('commission-terms', async () => {
+      const { error } = await getSupabaseClient().rpc('update_solar_commission_terms', {
+        p_commission_id: commission.id,
+        p_rate_percent: Number(commissionForm.rate),
+        p_adjustment_mxn: Number(commissionForm.adjustment || 0),
+        p_reason: commissionForm.reason || null,
+      });
+      return error;
+    }, 'Política de comisión actualizada y asentada en la bitácora.');
+  }
+
+  async function confirmMilestone(code) {
+    await run(`milestone-${code}`, async () => {
+      const { error } = await getSupabaseClient().rpc('confirm_solar_commission_milestone', { p_commission_id: commission.id, p_milestone_code: code });
+      return error;
+    }, 'Hito confirmado. El porcentaje devengado fue recalculado.');
+  }
+
+  async function approveCommission() {
+    await run('approve', async () => {
+      const { error } = await getSupabaseClient().rpc('approve_solar_commission', { p_commission_id: commission.id, p_self_approval_reason: commissionForm.approvalReason || null });
+      return error;
+    }, 'Comisión autorizada. Ya puede pasar a pago.');
+  }
+
+  async function payCommission(event) {
+    event.preventDefault();
+    await run('pay', async () => {
+      const { error } = await getSupabaseClient().rpc('pay_solar_commission', {
+        p_commission_id: commission.id,
+        p_payment_reference: commissionForm.paymentReference,
+        p_payroll_reference: commissionForm.payrollReference || null,
+      });
+      return error;
+    }, 'Pago de comisión registrado con su referencia.');
+  }
+
+  return <section className="sp-view">
+    <header className="sp-view-header">
+      <div><p className="sp-section-number">FINANZAS / CONTROL INTERNO</p><h1>Cobrar bien. Comisionar con evidencia.</h1></div>
+      <p className="sp-header-note">Los cobros se controlan por el total del proyecto. La comisión usa exclusivamente la base aceptada antes de IVA.</p>
+    </header>
+    <div className="sp-ledger">
+      <div><span>Cartera contratada</span><strong>{money.format(totalPortfolio)}</strong><small>importe total de proyectos</small></div>
+      <div><span>Cobrado conciliado</span><strong>{money.format(collectedPortfolio)}</strong><small>{totalPortfolio ? number.format(collectedPortfolio / totalPortfolio * 100) : 0}% de la cartera</small></div>
+      <div><span>Comisiones por liquidar</span><strong>{money.format(pendingCommissions)}</strong><small>devengadas o autorizadas</small></div>
+      <div><span>Comisiones pagadas</span><strong>{money.format(paidCommissions)}</strong><small>con referencia registrada</small></div>
+    </div>
+    <div className="sp-finance-layout">
+      <aside className="sp-finance-index">
+        <label className="sp-field"><span>Buscar proyecto</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Folio o cliente" /></label>
+        <div className="sp-finance-projects">
+          {visible.map((project) => {
+            const projectPaid = (project.solar_payments ?? []).filter((item) => item.status === 'reconciled').reduce((sum, item) => sum + Number(item.amount_mxn), 0);
+            return <button type="button" className={selected?.id === project.id ? 'is-active' : ''} onClick={() => setSelectedId(project.id)} key={project.id}>
+              <span>{project.folio}</span><strong>{project.customer_name}</strong><small>{money.format(projectPaid)} de {money.format(Number(project.agreed_total_mxn))}</small>
+              <i><b style={{ width: `${Math.min(projectPaid / Math.max(Number(project.agreed_total_mxn), 1) * 100, 100)}%` }} /></i>
+            </button>;
+          })}
+          {!visible.length && <p>No hay proyectos que coincidan.</p>}
+        </div>
+      </aside>
+      {selected ? <div className="sp-finance-detail">
+        <header className="sp-finance-title"><div><p className="sp-section-number">{selected.folio}</p><h2>{selected.customer_name}</h2></div><button type="button" className="sp-text-button" onClick={() => onOpenProject(selected.id)}>Abrir expediente →</button></header>
+        <div className="sp-balance-strip">
+          <div><span>Proyecto con IVA</span><strong>{money.format(Number(selected.agreed_total_mxn))}</strong></div>
+          <div><span>Conciliado</span><strong>{money.format(reconciled)}</strong></div>
+          <div><span>Saldo</span><strong>{money.format(Math.max(Number(selected.agreed_total_mxn) - reconciled, 0))}</strong></div>
+        </div>
+        {message && <p className="sp-inline-notice">{message}</p>}
+
+        <section className="sp-finance-section">
+          <div className="sp-subhead"><div><p className="sp-section-number">01 / COBRANZA</p><h2>Calendario acordado</h2></div><span>{schedules.length} concepto{schedules.length === 1 ? '' : 's'}</span></div>
+          <div className="sp-schedule-list">
+            {schedules.sort((a, b) => a.sequence - b.sequence).map((schedule) => <article key={schedule.id}>
+              <span className={`sp-finance-status sp-finance-status--${schedule.status}`}>{PAYMENT_STATUS_LABELS[schedule.status] ?? schedule.status}</span>
+              <div><strong>{schedule.label}</strong><small>{money.format(Number(schedule.paid_amount_mxn))} aplicado</small></div>
+              {isAdmin ? <><input id={`schedule-amount-${schedule.id}`} aria-label={`Importe ${schedule.label}`} type="number" min={schedule.paid_amount_mxn} defaultValue={schedule.amount_mxn} /><input id={`schedule-due-${schedule.id}`} aria-label={`Vencimiento ${schedule.label}`} type="date" defaultValue={schedule.due_at ?? ''} /><button type="button" className="sp-text-button" disabled={busy === `schedule-${schedule.id}`} onClick={() => saveSchedule(schedule)}>Guardar</button></> : <><b>{money.format(Number(schedule.amount_mxn))}</b><time>{schedule.due_at ? new Date(`${schedule.due_at}T12:00:00`).toLocaleDateString('es-MX') : 'Sin fecha'}</time></>}
+            </article>)}
+          </div>
+          <form className="sp-payment-form" onSubmit={recordPayment}>
+            <label className="sp-field"><span>Aplicar a</span><select value={paymentForm.scheduleId} onChange={(event) => { const schedule = schedules.find((item) => item.id === event.target.value); setPaymentForm({ ...paymentForm, scheduleId: event.target.value, amount: schedule ? String(Math.max(Number(schedule.amount_mxn) - Number(schedule.paid_amount_mxn), 0)) : paymentForm.amount }); }}><option value="">Sin concepto</option>{schedules.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+            <label className="sp-field"><span>Importe recibido</span><input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} required /></label>
+            <label className="sp-field"><span>Fecha y hora</span><input type="datetime-local" value={paymentForm.receivedAt} onChange={(event) => setPaymentForm({ ...paymentForm, receivedAt: event.target.value })} required /></label>
+            <label className="sp-field"><span>Medio</span><select value={paymentForm.method} onChange={(event) => setPaymentForm({ ...paymentForm, method: event.target.value })}><option value="transfer">Transferencia</option><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="check">Cheque</option><option value="financing">Financiamiento</option><option value="other">Otro</option></select></label>
+            <label className="sp-field"><span>Referencia</span><input value={paymentForm.reference} onChange={(event) => setPaymentForm({ ...paymentForm, reference: event.target.value })} placeholder="Folio bancario o recibo" /></label>
+            <button className="sp-button sp-button--primary" disabled={busy === 'payment'}>{busy === 'payment' ? 'Registrando…' : 'Registrar para conciliación'}</button>
+          </form>
+          <div className="sp-payment-ledger">
+            {payments.map((payment) => <article key={payment.id}><time>{new Date(payment.received_at).toLocaleDateString('es-MX')}</time><div><strong>{money.format(Number(payment.amount_mxn))}</strong><small>{payment.payment_method} · {payment.reference || 'sin referencia'}</small></div><span className={`sp-finance-status sp-finance-status--${payment.status}`}>{PAYMENT_STATUS_LABELS[payment.status]}</span>{isAdmin && payment.status === 'pending' && <div><button type="button" onClick={() => decidePayment(payment, 'reconciled')}>Conciliar</button><button type="button" onClick={() => decidePayment(payment, 'rejected')}>Rechazar</button></div>}</article>)}
+            {!payments.length && <p>Aún no hay cobros registrados.</p>}
+          </div>
+          <p className="sp-compliance-note">Control interno: registrar un pago aquí no emite CFDI. Si la operación es en parcialidades, contabilidad debe revisar el complemento de recepción de pagos aplicable.</p>
+        </section>
+
+        <section className="sp-finance-section">
+          <div className="sp-subhead"><div><p className="sp-section-number">02 / COMISIÓN</p><h2>Liquidación del vendedor</h2></div>{commission && <span>{COMMISSION_STATUS_LABELS[commission.status] ?? commission.status}</span>}</div>
+          {commission ? <>
+            <div className="sp-commission-equation"><div><span>Base antes de IVA</span><strong>{money.format(Number(commission.base_before_vat_mxn))}</strong></div><b>×</b><div><span>Tasa</span><strong>{number.format(Number(commission.rate_percent))}%</strong></div><b>+</b><div><span>Ajuste</span><strong>{money.format(Number(commission.adjustment_mxn))}</strong></div><b>=</b><div className="is-total"><span>Comisión</span><strong>{money.format(Number(commission.payable_amount_mxn))}</strong></div></div>
+            <div className="sp-milestones">{milestones.sort((a, b) => a.milestone_code.localeCompare(b.milestone_code)).map((milestone) => <article className={milestone.status === 'earned' ? 'is-earned' : ''} key={milestone.id}><span>{milestone.status === 'earned' ? '✓' : milestone.weight_percent + '%'}</span><div><strong>{milestone.label}</strong><small>{milestone.status === 'earned' ? `Confirmado ${new Date(milestone.earned_at).toLocaleDateString('es-MX')}` : 'Pendiente de evidencia'}</small></div>{isAdmin && milestone.status !== 'earned' && <button type="button" onClick={() => confirmMilestone(milestone.milestone_code)} disabled={busy === `milestone-${milestone.milestone_code}`}>Confirmar</button>}</article>)}</div>
+            {isAdmin && !['approved', 'paid', 'void'].includes(commission.status) && <form className="sp-commission-policy" onSubmit={saveCommission}><label className="sp-field"><span>Tasa (5%–10%)</span><input type="number" min="0" max="10" step="0.1" value={commissionForm.rate} onChange={(event) => setCommissionForm({ ...commissionForm, rate: event.target.value })} /></label><label className="sp-field"><span>Ajuste MXN</span><input type="number" step="0.01" value={commissionForm.adjustment} onChange={(event) => setCommissionForm({ ...commissionForm, adjustment: event.target.value })} /></label><label className="sp-field"><span>Justificación si hay ajuste</span><input value={commissionForm.reason} onChange={(event) => setCommissionForm({ ...commissionForm, reason: event.target.value })} /></label><button className="sp-button sp-button--secondary" disabled={busy === 'commission-terms'}>Guardar política</button></form>}
+            {isAdmin && commission.status === 'earned' && <div className="sp-commission-action"><label className="sp-field"><span>Motivo de autorización propia (sólo si aplica)</span><input value={commissionForm.approvalReason} onChange={(event) => setCommissionForm({ ...commissionForm, approvalReason: event.target.value })} placeholder="Se audita cuando administrador y vendedor son la misma persona" /></label><button type="button" className="sp-button sp-button--primary" onClick={approveCommission} disabled={busy === 'approve'}>Autorizar comisión</button></div>}
+            {isAdmin && commission.status === 'approved' && <form className="sp-commission-action" onSubmit={payCommission}><label className="sp-field"><span>Referencia de pago</span><input required value={commissionForm.paymentReference} onChange={(event) => setCommissionForm({ ...commissionForm, paymentReference: event.target.value })} /></label><label className="sp-field"><span>Referencia de nómina/contabilidad</span><input value={commissionForm.payrollReference} onChange={(event) => setCommissionForm({ ...commissionForm, payrollReference: event.target.value })} /></label><button className="sp-button sp-button--primary" disabled={busy === 'pay'}>Registrar comisión pagada</button></form>}
+            <p className="sp-compliance-note">La comisión no se calcula sobre IVA. Para personal subordinado, el registro interno debe conciliarse con nómina y el comprobante fiscal correspondiente.</p>
+          </> : <EmptyState title="Sin comisión asignada" detail="Este proyecto no tiene vendedor o política de comisión asociada." />}
+        </section>
+      </div> : <EmptyState title="Aún no hay proyectos vendidos" detail="Al aceptar una cotización se abrirá automáticamente su control de cobros y comisión." />}
     </div>
   </section>;
 }
@@ -1830,7 +2058,7 @@ function Catalog({ data, refresh }) {
 }
 
 function Team({ data, session, refresh }) {
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', commissionRate: '0' });
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', commissionRate: '5' });
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -1850,7 +2078,7 @@ function Team({ data, session, refresh }) {
     setBusy(false);
     if (!response.ok) return setMessage(body.message ?? 'No se pudo crear el vendedor.');
     setMessage('Vendedor creado. Comparte la contraseña temporal por un canal seguro.');
-    setForm({ fullName: '', email: '', password: '', commissionRate: '0' });
+    setForm({ fullName: '', email: '', password: '', commissionRate: '5' });
     await refresh();
   }
 
@@ -1882,7 +2110,7 @@ function Team({ data, session, refresh }) {
           <label className="sp-field"><span>Nombre completo</span><input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required /></label>
           <label className="sp-field"><span>Correo de acceso</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
           <label className="sp-field"><span>Contraseña temporal</span><input type="password" minLength="10" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
-          <label className="sp-field"><span>Comisión sobre venta</span><div className="sp-input-suffix"><input type="number" min="0" max="100" step="0.1" value={form.commissionRate} onChange={(e) => setForm({ ...form, commissionRate: e.target.value })} /><span>%</span></div></label>
+          <label className="sp-field"><span>Comisión sobre base antes de IVA</span><div className="sp-input-suffix"><input type="number" min="5" max="10" step="0.1" value={form.commissionRate} onChange={(e) => setForm({ ...form, commissionRate: e.target.value })} /><span>%</span></div><small>Política normal CDSE: de 5% a 10% máximo.</small></label>
           {message && <p className={message.startsWith('Vendedor') ? 'sp-inline-notice' : 'sp-form-error'}>{message}</p>}
           <button className="sp-button sp-button--primary" disabled={busy}>{busy ? 'Creando acceso…' : 'Crear vendedor'}</button>
         </form>
@@ -1930,7 +2158,7 @@ export default function SolarPortal() {
     const [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
-        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
         client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
@@ -2020,6 +2248,7 @@ export default function SolarPortal() {
     ['quotes', 'Oportunidades'],
     ['projects', 'Proyectos'],
     ['agenda', 'Agenda'],
+    ['finance', 'Finanzas'],
     ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
   ];
 
@@ -2047,6 +2276,7 @@ export default function SolarPortal() {
         {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
         {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
         {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {view === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}

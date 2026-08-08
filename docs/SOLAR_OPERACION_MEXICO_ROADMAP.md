@@ -8,7 +8,8 @@ Fecha de corte: 8 de agosto de 2026.
 - **Fase 2 — expediente e ingeniería:** implementada y desplegada. Incluye almacenamiento privado, carga múltiple, versiones, revisión administrativa, requisitos condicionales, levantamiento estructurado, ingeniería formal, recursos PDF y exportación integral.
 - **Puerta técnica desplegada:** el sistema exige visita aprobada, ingeniería aprobada y documentos base completos antes de permitir el estado `ready_for_submission`; para `submitted_to_cfe` exige además folio de seguimiento.
 - **Recursos desplegados:** reporte de levantamiento, carta de autorización condicional, índice documental y ZIP privado con archivos, versiones, manifiesto y huellas SHA-256. La generación y las aperturas quedan auditadas.
-- **Siguiente hito:** Fase 3 — venta, cobros y comisiones. Las fases 3 a 6 continúan pendientes según el orden definido en este documento.
+- **Módulo financiero base desplegado:** calendario automático de cobros, captura y conciliación de pagos, comisión sobre base antes de IVA, dos hitos de devengo, autorización y liquidación con bitácora. Se adelantó este núcleo de la Fase 5 por prioridad comercial.
+- **Siguiente hito:** Fase 3 — agenda de capacidad, órdenes de trabajo, cuadrillas, instalación móvil y acta de entrega. Las fases 4 a 6 continúan según el orden definido en este documento; en Fase 5 aún faltan reversos, margen real, exportación contable y reportes por periodo.
 
 ## 1. Objetivo
 
@@ -249,7 +250,7 @@ Principios:
 - pertenencia explícita por proyecto;
 - datos financieros restringidos;
 - cambios críticos con actor, fecha, valor anterior/nuevo y motivo;
-- el vendedor no aprueba su propia comisión;
+- la aprobación debe hacerla preferentemente un segundo administrador; mientras exista un único administrador que también vende, una autorización propia exige justificación excepcional y queda auditada;
 - quien ejecuta una revisión técnica no modifica la evidencia original.
 
 ## 8. Modelo de datos
@@ -266,6 +267,10 @@ Núcleo nuevo:
 - `solar_site_surveys`: levantamientos versionados de techo, sombras, acometida, tablero, ruta y seguridad.
 - `solar_engineering_revisions`: diseños versionados con equipos, strings, protecciones, conductores, tierra física, unifilar vinculado y relación DC/AC máxima de 120%.
 - `solar_commissions`: obligación y estado financiero.
+- `solar_payment_schedules`: calendario acordado de enganche, liquidación o pago total.
+- `solar_payments`: evidencia y conciliación de cobros del cliente.
+- `solar_commission_milestones`: devengo por anticipo y entrega.
+- `solar_commission_events`: bitácora inmutable de términos, devengo, autorización y pago.
 
 Extensiones posteriores:
 
@@ -273,7 +278,6 @@ Extensiones posteriores:
 - `solar_design_revisions`;
 - `solar_work_orders`, `solar_crews`, `solar_work_order_members`;
 - `solar_inventory_reservations` y consumo;
-- `solar_payments`/conciliación;
 - `solar_warranties`, `solar_assets` y números de serie;
 - `solar_service_cases` y generación monitoreada.
 
@@ -338,8 +342,9 @@ Extensiones posteriores:
 
 ### Fase 5 — finanzas y comisiones
 
-- anticipos, hitos, saldo y conciliación;
-- aprobación/reverso/pago de comisiones;
+- [implementado] anticipos, hitos, saldo y conciliación;
+- [implementado] aprobación y pago de comisiones;
+- [pendiente] reversos proporcionales y reembolsos;
 - margen presupuestado vs real;
 - reportes por vendedor/proyecto/periodo;
 - exportación contable, sin convertir el portal en sistema fiscal.

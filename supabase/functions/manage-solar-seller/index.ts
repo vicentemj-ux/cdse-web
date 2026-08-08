@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'npm:@supabase/supabase-js@2.111.0';
 
 const ALLOWED_ORIGINS = new Set([
   'https://cdse.com.mx',
@@ -80,9 +80,9 @@ Deno.serve(async (request) => {
       const fullName = text(payload.fullName, 'Nombre', 2, 120);
       const email = text(payload.email, 'Correo', 5, 254).toLowerCase();
       const password = text(payload.password, 'Contraseña temporal', 10, 128);
-      const commissionRate = Number(payload.commissionRate ?? 0);
-      if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) {
-        throw new Error('La comisión debe estar entre 0 y 100.');
+      const commissionRate = Number(payload.commissionRate ?? 5);
+      if (!Number.isFinite(commissionRate) || commissionRate < 5 || commissionRate > 10) {
+        throw new Error('La comisión debe estar entre 5 y 10 por ciento.');
       }
 
       const { data: created, error: createError } = await serviceClient.auth.admin.createUser({
@@ -123,8 +123,8 @@ Deno.serve(async (request) => {
       if (payload.fullName !== undefined) updates.full_name = text(payload.fullName, 'Nombre', 2, 120);
       if (payload.commissionRate !== undefined) {
         const rate = Number(payload.commissionRate);
-        if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
-          throw new Error('La comisión debe estar entre 0 y 100.');
+        if (!Number.isFinite(rate) || rate < 5 || rate > 10) {
+          throw new Error('La comisión debe estar entre 5 y 10 por ciento.');
         }
         updates.commission_rate = rate;
       }
