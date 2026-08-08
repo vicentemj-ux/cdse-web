@@ -5,8 +5,9 @@ Fecha de corte: 8 de agosto de 2026.
 ## Estado de implementación
 
 - **Fase 1 — núcleo de proyecto:** implementada y desplegada. Una cotización aceptada crea proyecto, expediente, tareas y comisión calculada antes de IVA.
-- **Fase 2 — expediente e ingeniería:** en construcción. Ya están desplegados el almacenamiento privado, carga múltiple por requisito, versiones de reemplazo, revisión administrativa, rechazo con motivo, requisitos condicionales y sincronización del checklist.
-- **Pendiente para cerrar Fase 2:** levantamiento técnico estructurado, revisiones formales de ingeniería, plantillas descargables e índice/exportación del expediente.
+- **Fase 2 — expediente e ingeniería:** en construcción. Ya están desplegados el almacenamiento privado, carga múltiple por requisito, versiones de reemplazo, revisión administrativa, rechazo con motivo, requisitos condicionales, levantamiento técnico estructurado y revisiones formales de ingeniería.
+- **Puerta técnica desplegada:** el sistema exige visita aprobada, ingeniería aprobada y documentos base completos antes de permitir el estado `ready_for_submission`; para `submitted_to_cfe` exige además folio de seguimiento.
+- **Pendiente para cerrar Fase 2:** plantillas descargables, generación del reporte de levantamiento, índice y exportación integral del expediente.
 - **Fases 3 a 6:** pendientes según el orden definido en este documento.
 
 ## 1. Objetivo
@@ -262,6 +263,8 @@ Núcleo nuevo:
 - `solar_project_checklist_items`: puertas y evidencia requerida.
 - `solar_project_tasks`: agenda, responsables, vencimientos y cierre.
 - `solar_project_events`: bitácora inmutable.
+- `solar_site_surveys`: levantamientos versionados de techo, sombras, acometida, tablero, ruta y seguridad.
+- `solar_engineering_revisions`: diseños versionados con equipos, strings, protecciones, conductores, tierra física, unifilar vinculado y relación DC/AC máxima de 120%.
 - `solar_commissions`: obligación y estado financiero.
 
 Extensiones posteriores:

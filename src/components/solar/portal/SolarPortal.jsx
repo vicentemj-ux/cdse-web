@@ -70,6 +70,19 @@ const TASK_TYPE_LABELS = {
   warranty: 'Garantía',
   other: 'Otro',
 };
+const TECHNICAL_STATUS_LABELS = {
+  draft: 'Borrador',
+  submitted: 'En revisión',
+  approved: 'Aprobado',
+  rejected: 'Requiere corrección',
+};
+const ROOF_TYPE_LABELS = {
+  concrete_slab: 'Losa de concreto',
+  metal_sheet: 'Lámina metálica',
+  tile: 'Teja',
+  ground: 'Montaje en suelo',
+  other: 'Otro',
+};
 const money = new Intl.NumberFormat('es-MX', {
   style: 'currency',
   currency: 'MXN',
@@ -151,7 +164,16 @@ function normalizePhone(value) {
 }
 
 function errorMessage(error) {
-  return error?.message?.replace(/^.*?:\s*/, '') || 'Ocurrió un error inesperado.';
+  const raw = error?.message?.replace(/^.*?:\s*/, '') || '';
+  const operationalMessages = {
+    INCOMPLETE_SITE_SURVEY: 'El levantamiento aún está incompleto. Verifica fecha, techo, área, sombras, servicio eléctrico, tablero, tierra física, medidor y longitud de ruta.',
+    INCOMPLETE_ENGINEERING_REVISION: 'Completa paneles, equipos, potencias, strings, protecciones, conductores y puesta a tierra antes de enviar el diseño.',
+    APPROVED_SINGLE_LINE_DIAGRAM_REQUIRED: 'Primero sube y aprueba el diagrama unifilar en el expediente. Después podrás enviar esta ingeniería.',
+    INVERTER_OVERPRODUCTION_LIMIT_EXCEEDED: 'La relación DC/AC supera 120%. Ajusta potencia o cantidad de inversores antes de continuar.',
+    PROJECT_NOT_READY_FOR_CFE: 'El proyecto no puede marcarse listo para CFE: deben estar aprobados el levantamiento, la ingeniería y todos los documentos base.',
+    CFE_TRACKING_FOLIO_REQUIRED: 'Para marcar el proyecto como ingresado a CFE debes registrar el folio de seguimiento.',
+  };
+  return operationalMessages[raw] ?? (raw || 'Ocurrió un error inesperado.');
 }
 
 function StatusPill({ status }) {
@@ -968,10 +990,17 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
   const [uploadingId, setUploadingId] = useState('');
   const [taskForm, setTaskForm] = useState(null);
   const [operationsForm, setOperationsForm] = useState(null);
+  const [surveyForm, setSurveyForm] = useState(null);
+  const [engineeringForm, setEngineeringForm] = useState(null);
   const [message, setMessage] = useState('');
   useEffect(() => {
     if (openProjectId) setSelectedId(openProjectId);
   }, [openProjectId]);
+  useEffect(() => {
+    setSurveyForm(null);
+    setEngineeringForm(null);
+    setOperationsForm(null);
+  }, [selectedId]);
   const normalizedSearch = search.trim().toLowerCase();
   const visibleProjects = data.projects.filter((project) => {
     const haystack = [
@@ -1139,6 +1168,131 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
     await refresh();
   }
 
+  function beginSurvey() {
+    const current = [...(selected.solar_site_surveys ?? [])]
+      .sort((a, b) => b.version - a.version)[0];
+    setEngineeringForm(null);
+    setSurveyForm({
+      visitedAt: current?.visited_at?.slice(0, 16) ?? selected.target_site_survey_at?.slice(0, 16) ?? '',
+      technicianUserId: current?.technician_user_id ?? profile.user_id,
+      latitude: current?.latitude ?? '',
+      longitude: current?.longitude ?? '',
+      roofType: current?.roof_type ?? 'concrete_slab',
+      roofCondition: current?.roof_condition ?? '',
+      usableAreaM2: current?.usable_area_m2 ?? '',
+      orientationDegrees: current?.orientation_degrees ?? '',
+      tiltDegrees: current?.tilt_degrees ?? '',
+      shadingLevel: current?.shading_level ?? '',
+      electricalService: current?.electrical_service ?? '',
+      serviceVoltage: current?.service_voltage ?? '',
+      mainBreakerAmps: current?.main_breaker_amps ?? '',
+      panelboardCondition: current?.panelboard_condition ?? '',
+      groundingAvailable: current?.grounding_available == null ? '' : String(current.grounding_available),
+      meterAccessible: current?.meter_accessible == null ? '' : String(current.meter_accessible),
+      routeLengthM: current?.route_length_m ?? '',
+      structureNotes: current?.structure_notes ?? '',
+      electricalNotes: current?.electrical_notes ?? '',
+      safetyNotes: current?.safety_notes ?? '',
+      generalNotes: current?.general_notes ?? '',
+    });
+  }
+
+  async function saveSurvey(event) {
+    event.preventDefault();
+    const submit = event.nativeEvent.submitter?.value === 'submit';
+    setBusyId('site-survey');
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('save_solar_site_survey', {
+      p_project_id: selected.id,
+      p_survey: surveyForm,
+      p_submit: submit,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setSurveyForm(null);
+    setMessage(submit ? 'Levantamiento enviado a revisión técnica.' : 'Borrador de levantamiento guardado.');
+    await refresh();
+  }
+
+  async function reviewSurvey(survey, decision) {
+    let reason = null;
+    if (decision === 'rejected') {
+      reason = window.prompt('Indica exactamente qué debe corregirse en el levantamiento:')?.trim();
+      if (!reason) return;
+    }
+    setBusyId(survey.id);
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('review_solar_site_survey', {
+      p_survey_id: survey.id,
+      p_decision: decision,
+      p_rejection_reason: reason,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage(decision === 'approved' ? 'Levantamiento técnico aprobado.' : 'Levantamiento devuelto con observaciones.');
+    await refresh();
+  }
+
+  function beginEngineering() {
+    const current = [...(selected.solar_engineering_revisions ?? [])]
+      .sort((a, b) => b.version - a.version)[0];
+    const scope = selected.sold_scope_snapshot ?? {};
+    const result = scope.results ?? {};
+    const configuration = scope.configuration ?? {};
+    setSurveyForm(null);
+    setEngineeringForm({
+      panelCount: current?.panel_count ?? scope.panelCount ?? result.panelCount ?? '',
+      moduleModel: current?.module_model ?? configuration.module?.name ?? configuration.module?.model ?? '',
+      inverterModel: current?.inverter_model ?? configuration.inverter?.name ?? configuration.inverter?.model ?? '',
+      inverterQuantity: current?.inverter_quantity ?? scope.inverterQuantity ?? 1,
+      systemDcKw: current?.system_dc_kw ?? result.systemDcKw ?? '',
+      inverterAcKw: current?.inverter_ac_kw ?? configuration.inverter?.acPowerKw ?? configuration.inverter?.nominalPowerKw ?? '',
+      stringConfiguration: current?.string_configuration ?? '',
+      mpptConfiguration: current?.mppt_configuration ?? '',
+      dcProtection: current?.dc_protection ?? '',
+      acProtection: current?.ac_protection ?? '',
+      conductorSpecification: current?.conductor_specification ?? '',
+      groundingDesign: current?.grounding_design ?? '',
+      designNotes: current?.design_notes ?? '',
+    });
+  }
+
+  async function saveEngineering(event) {
+    event.preventDefault();
+    const submit = event.nativeEvent.submitter?.value === 'submit';
+    setBusyId('engineering');
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('save_solar_engineering_revision', {
+      p_project_id: selected.id,
+      p_design: engineeringForm,
+      p_submit: submit,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setEngineeringForm(null);
+    setMessage(submit ? 'Diseño enviado a revisión. El unifilar aprobado quedó vinculado.' : 'Borrador de ingeniería guardado.');
+    await refresh();
+  }
+
+  async function reviewEngineering(revision, decision) {
+    let reason = null;
+    if (decision === 'rejected') {
+      reason = window.prompt('Indica exactamente qué debe corregirse en el diseño:')?.trim();
+      if (!reason) return;
+    }
+    setBusyId(revision.id);
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('review_solar_engineering_revision', {
+      p_revision_id: revision.id,
+      p_decision: decision,
+      p_rejection_reason: reason,
+    });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage(decision === 'approved' ? 'Ingeniería aprobada y habilitada para el expediente CFE.' : 'Diseño devuelto con observaciones.');
+    await refresh();
+  }
+
   const requiredChecklist = selected?.solar_project_checklist_items?.filter((item) => item.required) ?? [];
   const completedChecklist = requiredChecklist.filter((item) => item.status === 'complete').length;
   const integrity = requiredChecklist.length
@@ -1153,6 +1307,19 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
     return groups;
   }, {});
   const commission = selected?.solar_commissions?.[0];
+  const latestSurvey = [...(selected?.solar_site_surveys ?? [])].sort((a, b) => b.version - a.version)[0];
+  const latestEngineering = [...(selected?.solar_engineering_revisions ?? [])].sort((a, b) => b.version - a.version)[0];
+  const surveyApproved = (selected?.solar_site_surveys ?? []).some((item) => item.status === 'approved');
+  const engineeringApproved = (selected?.solar_engineering_revisions ?? []).some((item) => item.status === 'approved');
+  const missingCfeDocuments = requiredChecklist.filter((item) => (
+    ['commercial', 'site_survey', 'engineering', 'cfe'].includes(item.stage)
+    && item.item_code !== 'cfe_acknowledgement'
+    && item.status !== 'complete'
+  ));
+  const readyForCfe = surveyApproved && engineeringApproved && missingCfeDocuments.length === 0;
+  const engineeringRatio = engineeringForm?.systemDcKw && engineeringForm?.inverterAcKw
+    ? Number(engineeringForm.systemDcKw) / Number(engineeringForm.inverterAcKw) * 100
+    : 0;
 
   return (
     <section className="sp-view">
@@ -1217,6 +1384,99 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
             <div><span>Comisión</span><strong>{commission ? `${number.format(Number(commission.rate_percent))}% · ${money.format(Number(commission.payable_amount_mxn))}` : 'Sin vendedor'}</strong><small>{commission?.requires_review ? 'Requiere revisión administrativa' : commission?.status}</small></div>
             <div><span>Folio CFE</span><strong>{selected.cfe_tracking_folio ?? 'Pendiente'}</strong></div>
           </div>
+
+          <section className="sp-technical-control">
+            <header className="sp-technical-header">
+              <div><p className="sp-section-number">PUERTA TÉCNICA / CFE</p><h2>Del techo al plano aprobado.</h2></div>
+              <span className={`sp-readiness ${readyForCfe ? 'is-ready' : ''}`}>{readyForCfe ? 'Expediente habilitado' : 'Avance protegido'}</span>
+            </header>
+
+            <div className="sp-gate-strip" aria-label="Condiciones para presentar a CFE">
+              <div className={surveyApproved ? 'is-complete' : ''}><span>01</span><strong>Visita aprobada</strong><small>{surveyApproved ? 'Condiciones verificadas' : 'Falta aprobación'}</small></div>
+              <div className={engineeringApproved ? 'is-complete' : ''}><span>02</span><strong>Ingeniería aprobada</strong><small>{engineeringApproved ? 'Diseño ejecutable' : 'Falta diseño aprobado'}</small></div>
+              <div className={!missingCfeDocuments.length ? 'is-complete' : ''}><span>03</span><strong>Documentos base</strong><small>{missingCfeDocuments.length ? `${missingCfeDocuments.length} pendiente${missingCfeDocuments.length === 1 ? '' : 's'}` : 'Completos'}</small></div>
+            </div>
+
+            <div className="sp-technical-tracks">
+              <article>
+                <div className="sp-track-heading"><div><span>LEVANTAMIENTO</span><h3>Condiciones reales del sitio</h3></div><b className={`sp-tech-status sp-tech-status--${latestSurvey?.status ?? 'draft'}`}>{latestSurvey ? `v${latestSurvey.version} · ${TECHNICAL_STATUS_LABELS[latestSurvey.status]}` : 'Sin captura'}</b></div>
+                {latestSurvey ? <dl className="sp-tech-summary">
+                  <div><dt>Techo</dt><dd>{ROOF_TYPE_LABELS[latestSurvey.roof_type] ?? 'Por confirmar'} · {latestSurvey.usable_area_m2 ? `${number.format(Number(latestSurvey.usable_area_m2))} m² útiles` : 'área pendiente'}</dd></div>
+                  <div><dt>Servicio</dt><dd>{latestSurvey.service_voltage ? `${latestSurvey.service_voltage} V · ${number.format(Number(latestSurvey.main_breaker_amps))} A` : 'Por confirmar'}</dd></div>
+                  <div><dt>Ruta</dt><dd>{latestSurvey.route_length_m != null ? `${number.format(Number(latestSurvey.route_length_m))} m` : 'Por confirmar'}</dd></div>
+                </dl> : <p className="sp-track-empty">Registra techo, sombras, tablero, acometida, ruta y condiciones de seguridad durante la visita.</p>}
+                {latestSurvey?.rejection_reason && <p className="sp-review-note"><strong>Corrección:</strong> {latestSurvey.rejection_reason}</p>}
+                <div className="sp-track-actions">
+                  {latestSurvey?.status !== 'submitted' && <button type="button" onClick={beginSurvey}>{latestSurvey ? 'Abrir levantamiento' : 'Capturar visita'}</button>}
+                  {isAdmin && latestSurvey?.status === 'submitted' && <><button type="button" onClick={() => reviewSurvey(latestSurvey, 'approved')} disabled={busyId === latestSurvey.id}>Aprobar</button><button type="button" onClick={() => reviewSurvey(latestSurvey, 'rejected')} disabled={busyId === latestSurvey.id}>Solicitar corrección</button></>}
+                </div>
+              </article>
+
+              <article>
+                <div className="sp-track-heading"><div><span>INGENIERÍA</span><h3>Diseño listo para ejecutar</h3></div><b className={`sp-tech-status sp-tech-status--${latestEngineering?.status ?? 'draft'}`}>{latestEngineering ? `v${latestEngineering.version} · ${TECHNICAL_STATUS_LABELS[latestEngineering.status]}` : 'Sin diseño'}</b></div>
+                {latestEngineering ? <dl className="sp-tech-summary">
+                  <div><dt>Sistema</dt><dd>{latestEngineering.panel_count ?? '—'} paneles · {latestEngineering.system_dc_kw ?? '—'} kWp</dd></div>
+                  <div><dt>Inversor</dt><dd>{latestEngineering.inverter_quantity ?? '—'} × {latestEngineering.inverter_model ?? 'Por confirmar'}</dd></div>
+                  <div><dt>Relación DC/AC</dt><dd>{latestEngineering.dc_ac_ratio_percent ? `${number.format(Number(latestEngineering.dc_ac_ratio_percent))}%` : 'Por confirmar'} · máximo 120%</dd></div>
+                </dl> : <p className="sp-track-empty">Documenta módulos, inversor, strings, protecciones, conductores, tierra física y vincula el unifilar aprobado.</p>}
+                {latestEngineering?.rejection_reason && <p className="sp-review-note"><strong>Corrección:</strong> {latestEngineering.rejection_reason}</p>}
+                <div className="sp-track-actions">
+                  {latestEngineering?.status !== 'submitted' && <button type="button" onClick={beginEngineering}>{latestEngineering ? 'Abrir ingeniería' : 'Preparar diseño'}</button>}
+                  {isAdmin && latestEngineering?.status === 'submitted' && <><button type="button" onClick={() => reviewEngineering(latestEngineering, 'approved')} disabled={busyId === latestEngineering.id}>Aprobar</button><button type="button" onClick={() => reviewEngineering(latestEngineering, 'rejected')} disabled={busyId === latestEngineering.id}>Solicitar corrección</button></>}
+                </div>
+              </article>
+            </div>
+
+            {surveyForm && <form className="sp-technical-form" onSubmit={saveSurvey}>
+              <div className="sp-subhead"><div><p className="sp-section-number">FORMATO DE CAMPO</p><h2>Levantamiento técnico</h2></div><button type="button" onClick={() => setSurveyForm(null)}>Cerrar</button></div>
+              <p className="sp-form-guidance">Puedes guardar un borrador desde el sitio. Para enviarlo a revisión deben quedar completos los datos esenciales eléctricos y de montaje.</p>
+              <div className="sp-form-grid sp-form-grid--technical">
+                <label className="sp-field"><span>Fecha y hora de visita</span><input type="datetime-local" value={surveyForm.visitedAt} onChange={(event) => setSurveyForm({ ...surveyForm, visitedAt: event.target.value })} /></label>
+                <label className="sp-field"><span>Técnico responsable</span><select value={surveyForm.technicianUserId} onChange={(event) => setSurveyForm({ ...surveyForm, technicianUserId: event.target.value })}>{data.profiles.filter((item) => item.active).map((item) => <option key={item.user_id} value={item.user_id}>{item.full_name}</option>)}</select></label>
+                <label className="sp-field"><span>Tipo de techo</span><select value={surveyForm.roofType} onChange={(event) => setSurveyForm({ ...surveyForm, roofType: event.target.value })}>{Object.entries(ROOF_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                <label className="sp-field"><span>Estado del techo</span><select value={surveyForm.roofCondition} onChange={(event) => setSurveyForm({ ...surveyForm, roofCondition: event.target.value })}><option value="">Seleccionar</option><option value="good">Bueno</option><option value="fair">Requiere atención</option><option value="poor">No apto sin corrección</option></select></label>
+                <label className="sp-field"><span>Área útil m²</span><input type="number" min="0" step="0.01" inputMode="decimal" value={surveyForm.usableAreaM2} onChange={(event) => setSurveyForm({ ...surveyForm, usableAreaM2: event.target.value })} /></label>
+                <label className="sp-field"><span>Nivel de sombras</span><select value={surveyForm.shadingLevel} onChange={(event) => setSurveyForm({ ...surveyForm, shadingLevel: event.target.value })}><option value="">Seleccionar</option><option value="none">Sin sombras</option><option value="low">Bajas</option><option value="moderate">Moderadas</option><option value="high">Altas</option></select></label>
+                <label className="sp-field"><span>Orientación °</span><input type="number" min="0" max="360" step="1" inputMode="numeric" value={surveyForm.orientationDegrees} onChange={(event) => setSurveyForm({ ...surveyForm, orientationDegrees: event.target.value })} placeholder="Ej. 180" /></label>
+                <label className="sp-field"><span>Inclinación °</span><input type="number" min="0" max="90" step="1" inputMode="numeric" value={surveyForm.tiltDegrees} onChange={(event) => setSurveyForm({ ...surveyForm, tiltDegrees: event.target.value })} /></label>
+                <label className="sp-field"><span>Tipo de servicio</span><select value={surveyForm.electricalService} onChange={(event) => setSurveyForm({ ...surveyForm, electricalService: event.target.value })}><option value="">Seleccionar</option><option value="single_phase">Monofásico</option><option value="two_phase">Bifásico</option><option value="three_phase">Trifásico</option></select></label>
+                <label className="sp-field"><span>Voltaje de servicio</span><input type="number" min="90" max="600" inputMode="numeric" value={surveyForm.serviceVoltage} onChange={(event) => setSurveyForm({ ...surveyForm, serviceVoltage: event.target.value })} placeholder="127, 220…" /></label>
+                <label className="sp-field"><span>Interruptor principal A</span><input type="number" min="1" step="1" inputMode="numeric" value={surveyForm.mainBreakerAmps} onChange={(event) => setSurveyForm({ ...surveyForm, mainBreakerAmps: event.target.value })} /></label>
+                <label className="sp-field"><span>Estado del tablero</span><select value={surveyForm.panelboardCondition} onChange={(event) => setSurveyForm({ ...surveyForm, panelboardCondition: event.target.value })}><option value="">Seleccionar</option><option value="good">Apto</option><option value="requires_adjustment">Requiere adecuación</option><option value="requires_replacement">Requiere reemplazo</option></select></label>
+                <label className="sp-field"><span>Tierra física disponible</span><select value={surveyForm.groundingAvailable} onChange={(event) => setSurveyForm({ ...surveyForm, groundingAvailable: event.target.value })}><option value="">Verificar</option><option value="true">Sí</option><option value="false">No</option></select></label>
+                <label className="sp-field"><span>Medidor accesible</span><select value={surveyForm.meterAccessible} onChange={(event) => setSurveyForm({ ...surveyForm, meterAccessible: event.target.value })}><option value="">Verificar</option><option value="true">Sí</option><option value="false">No</option></select></label>
+                <label className="sp-field"><span>Ruta eléctrica m</span><input type="number" min="0" step="0.1" inputMode="decimal" value={surveyForm.routeLengthM} onChange={(event) => setSurveyForm({ ...surveyForm, routeLengthM: event.target.value })} /></label>
+                <label className="sp-field"><span>Latitud</span><input type="number" min="-90" max="90" step="0.000001" inputMode="decimal" value={surveyForm.latitude} onChange={(event) => setSurveyForm({ ...surveyForm, latitude: event.target.value })} /></label>
+                <label className="sp-field"><span>Longitud</span><input type="number" min="-180" max="180" step="0.000001" inputMode="decimal" value={surveyForm.longitude} onChange={(event) => setSurveyForm({ ...surveyForm, longitude: event.target.value })} /></label>
+                <label className="sp-field sp-field--wide"><span>Observaciones estructurales</span><textarea rows="2" value={surveyForm.structureNotes} onChange={(event) => setSurveyForm({ ...surveyForm, structureNotes: event.target.value })} placeholder="Fisuras, impermeabilización, obstáculos, sistema de anclaje…" /></label>
+                <label className="sp-field sp-field--wide"><span>Observaciones eléctricas</span><textarea rows="2" value={surveyForm.electricalNotes} onChange={(event) => setSurveyForm({ ...surveyForm, electricalNotes: event.target.value })} placeholder="Tablero, acometida, canalización, espacios disponibles…" /></label>
+                <label className="sp-field sp-field--wide"><span>Riesgos y seguridad</span><textarea rows="2" value={surveyForm.safetyNotes} onChange={(event) => setSurveyForm({ ...surveyForm, safetyNotes: event.target.value })} placeholder="Acceso, trabajo en altura, líneas cercanas y equipo requerido…" /></label>
+              </div>
+              <div className="sp-form-actions"><button className="sp-button sp-button--secondary" name="intent" value="draft" disabled={busyId === 'site-survey'}>Guardar borrador</button><button className="sp-button sp-button--primary" name="intent" value="submit" disabled={busyId === 'site-survey'}>Enviar a revisión</button></div>
+            </form>}
+
+            {engineeringForm && <form className="sp-technical-form" onSubmit={saveEngineering}>
+              <div className="sp-subhead"><div><p className="sp-section-number">CONTROL DE DISEÑO</p><h2>Revisión de ingeniería</h2></div><button type="button" onClick={() => setEngineeringForm(null)}>Cerrar</button></div>
+              <p className="sp-form-guidance">La relación DC/AC se calcula automáticamente. Para enviar a revisión debe existir una versión aprobada del diagrama unifilar.</p>
+              <div className="sp-engineering-ratio"><span>Relación DC/AC</span><strong className={engineeringRatio > 120 ? 'is-over' : ''}>{engineeringRatio ? `${number.format(engineeringRatio)}%` : '—'}</strong><small>{engineeringRatio > 120 ? 'Supera el máximo permitido de 120%' : 'Límite de sobredimensionamiento: 120%'}</small></div>
+              <div className="sp-form-grid sp-form-grid--technical">
+                <label className="sp-field"><span>Cantidad de paneles</span><input type="number" min="1" inputMode="numeric" value={engineeringForm.panelCount} onChange={(event) => setEngineeringForm({ ...engineeringForm, panelCount: event.target.value })} /></label>
+                <label className="sp-field"><span>Modelo de panel</span><input value={engineeringForm.moduleModel} onChange={(event) => setEngineeringForm({ ...engineeringForm, moduleModel: event.target.value })} /></label>
+                <label className="sp-field"><span>Potencia DC kWp</span><input type="number" min="0.001" step="0.001" inputMode="decimal" value={engineeringForm.systemDcKw} onChange={(event) => setEngineeringForm({ ...engineeringForm, systemDcKw: event.target.value })} /></label>
+                <label className="sp-field"><span>Potencia AC del inversor kW</span><input type="number" min="0.001" step="0.001" inputMode="decimal" value={engineeringForm.inverterAcKw} onChange={(event) => setEngineeringForm({ ...engineeringForm, inverterAcKw: event.target.value })} /></label>
+                <label className="sp-field"><span>Modelo de inversor</span><input value={engineeringForm.inverterModel} onChange={(event) => setEngineeringForm({ ...engineeringForm, inverterModel: event.target.value })} /></label>
+                <label className="sp-field"><span>Cantidad de inversores</span><input type="number" min="1" inputMode="numeric" value={engineeringForm.inverterQuantity} onChange={(event) => setEngineeringForm({ ...engineeringForm, inverterQuantity: event.target.value })} /></label>
+                <label className="sp-field sp-field--wide"><span>Configuración de strings</span><input value={engineeringForm.stringConfiguration} onChange={(event) => setEngineeringForm({ ...engineeringForm, stringConfiguration: event.target.value })} placeholder="Ej. 2 strings de 8 módulos" /></label>
+                <label className="sp-field sp-field--wide"><span>Asignación MPPT</span><input value={engineeringForm.mpptConfiguration} onChange={(event) => setEngineeringForm({ ...engineeringForm, mpptConfiguration: event.target.value })} placeholder="Ej. MPPT 1: S1 · MPPT 2: S2" /></label>
+                <label className="sp-field"><span>Protección DC</span><input value={engineeringForm.dcProtection} onChange={(event) => setEngineeringForm({ ...engineeringForm, dcProtection: event.target.value })} /></label>
+                <label className="sp-field"><span>Protección AC</span><input value={engineeringForm.acProtection} onChange={(event) => setEngineeringForm({ ...engineeringForm, acProtection: event.target.value })} /></label>
+                <label className="sp-field sp-field--wide"><span>Conductores y canalización</span><input value={engineeringForm.conductorSpecification} onChange={(event) => setEngineeringForm({ ...engineeringForm, conductorSpecification: event.target.value })} /></label>
+                <label className="sp-field sp-field--wide"><span>Diseño de puesta a tierra</span><input value={engineeringForm.groundingDesign} onChange={(event) => setEngineeringForm({ ...engineeringForm, groundingDesign: event.target.value })} /></label>
+                <label className="sp-field sp-field--wide"><span>Notas de diseño</span><textarea rows="3" value={engineeringForm.designNotes} onChange={(event) => setEngineeringForm({ ...engineeringForm, designNotes: event.target.value })} /></label>
+              </div>
+              <div className="sp-form-actions"><button className="sp-button sp-button--secondary" name="intent" value="draft" disabled={busyId === 'engineering'}>Guardar borrador</button><button className="sp-button sp-button--primary" name="intent" value="submit" disabled={busyId === 'engineering' || engineeringRatio > 120}>Enviar a revisión</button></div>
+            </form>}
+          </section>
 
           <div className="sp-project-columns">
             <section>
@@ -1560,7 +1820,7 @@ export default function SolarPortal() {
     const [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
-        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
         client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
