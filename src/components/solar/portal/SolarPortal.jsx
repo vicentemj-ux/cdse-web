@@ -55,6 +55,21 @@ const DOCUMENT_STAGE_LABELS = {
   installation: 'Instalación',
   handover: 'Entrega',
 };
+const TASK_TYPE_LABELS = {
+  follow_up: 'Seguimiento',
+  site_survey: 'Visita técnica',
+  customer_document: 'Documento del cliente',
+  engineering_review: 'Revisión de ingeniería',
+  cfe_submission: 'Ingreso CFE',
+  cfe_follow_up: 'Seguimiento CFE',
+  installation: 'Instalación',
+  inspection: 'Inspección y pruebas',
+  meter_change: 'Cambio de medidor',
+  commissioning: 'Puesta en marcha',
+  collection: 'Cobro',
+  warranty: 'Garantía',
+  other: 'Otro',
+};
 const money = new Intl.NumberFormat('es-MX', {
   style: 'currency',
   currency: 'MXN',
@@ -883,7 +898,69 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
   );
 }
 
-function Projects({ data, refresh, isAdmin, profile }) {
+function Agenda({ data, profile, isAdmin, refresh, onOpenProject }) {
+  const [ownerFilter, setOwnerFilter] = useState(isAdmin ? 'all' : 'mine');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [busyId, setBusyId] = useState('');
+  const [message, setMessage] = useState('');
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  const weekEnd = new Date(todayStart); weekEnd.setDate(weekEnd.getDate() + 8);
+  const activeTasks = data.tasks
+    .filter((task) => !['completed', 'cancelled'].includes(task.status))
+    .filter((task) => ownerFilter === 'all' || task.assigned_to === profile.user_id)
+    .filter((task) => typeFilter === 'all' || task.task_type === typeFilter)
+    .sort((a, b) => String(a.due_at ?? '9999').localeCompare(String(b.due_at ?? '9999')));
+
+  const groups = [
+    ['overdue', 'Vencidas', activeTasks.filter((task) => task.due_at && new Date(task.due_at) < todayStart)],
+    ['today', 'Hoy', activeTasks.filter((task) => task.due_at && new Date(task.due_at) >= todayStart && new Date(task.due_at) < tomorrowStart)],
+    ['week', 'Próximos 7 días', activeTasks.filter((task) => task.due_at && new Date(task.due_at) >= tomorrowStart && new Date(task.due_at) < weekEnd)],
+    ['later', 'Más adelante', activeTasks.filter((task) => task.due_at && new Date(task.due_at) >= weekEnd)],
+    ['unscheduled', 'Sin fecha', activeTasks.filter((task) => !task.due_at)],
+  ];
+
+  async function complete(task) {
+    setBusyId(task.id);
+    setMessage('');
+    const { error } = await getSupabaseClient().rpc('complete_solar_project_task', { p_task_id: task.id });
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage('Tarea completada y registrada en la bitácora.');
+    await refresh();
+  }
+
+  return <section className="sp-view">
+    <header className="sp-view-header">
+      <div><p className="sp-section-number">AGENDA / EQUIPO SOLAR</p><h1>Lo que sigue, con dueño.</h1></div>
+      <p className="sp-header-note">Prioriza compromisos vencidos, coordina visitas e instalaciones y conserva cada cierre dentro del proyecto correcto.</p>
+    </header>
+    <div className="sp-ledger">
+      <div><span>Vencidas</span><strong>{groups[0][2].length}</strong><small>resolver primero</small></div>
+      <div><span>Para hoy</span><strong>{groups[1][2].length}</strong><small>{todayStart.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</small></div>
+      <div><span>Próximos 7 días</span><strong>{groups[2][2].length}</strong><small>capacidad próxima</small></div>
+      <div><span>Sin fecha</span><strong>{groups[4][2].length}</strong><small>requieren programación</small></div>
+    </div>
+    <div className="sp-quote-filters">
+      {isAdmin && <label className="sp-field"><span>Responsable</span><select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)}><option value="all">Todo el equipo</option><option value="mine">Sólo mis tareas</option></select></label>}
+      <label className="sp-field"><span>Tipo de compromiso</span><select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="all">Todos</option>{Object.entries(TASK_TYPE_LABELS).map(([type, label]) => <option key={type} value={type}>{label}</option>)}</select></label>
+    </div>
+    {message && <p className="sp-inline-notice">{message}</p>}
+    <div className="sp-agenda">
+      {groups.map(([key, label, tasks]) => <section className={`sp-agenda-group sp-agenda-group--${key}`} key={key}>
+        <header><h2>{label}</h2><span>{tasks.length}</span></header>
+        {tasks.length ? tasks.map((task) => <article className="sp-agenda-row" key={task.id}>
+          <time>{task.due_at ? new Date(task.due_at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Por programar'}</time>
+          <div><span>{TASK_TYPE_LABELS[task.task_type] ?? task.task_type}</span><strong>{task.title}</strong><small>{task.solar_projects?.folio} · {task.solar_projects?.customer_name} · {data.profileMap[task.assigned_to]?.full_name ?? 'Sin asignar'}</small></div>
+          <div className="sp-agenda-actions"><button type="button" onClick={() => onOpenProject(task.project_id)}>Proyecto</button>{(isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => complete(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}</div>
+        </article>) : <p>No hay compromisos en este bloque.</p>}
+      </section>)}
+    </div>
+  </section>;
+}
+
+function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(data.projects[0]?.id ?? null);
@@ -892,6 +969,9 @@ function Projects({ data, refresh, isAdmin, profile }) {
   const [taskForm, setTaskForm] = useState(null);
   const [operationsForm, setOperationsForm] = useState(null);
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (openProjectId) setSelectedId(openProjectId);
+  }, [openProjectId]);
   const normalizedSearch = search.trim().toLowerCase();
   const visibleProjects = data.projects.filter((project) => {
     const haystack = [
@@ -1448,9 +1528,10 @@ export default function SolarPortal() {
   const [needsBootstrap, setNeedsBootstrap] = useState(false);
   const [view, setView] = useState('overview');
   const [openQuoteId, setOpenQuoteId] = useState(null);
+  const [openProjectId, setOpenProjectId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
-    quotes: [], projects: [], commissions: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
+    quotes: [], projects: [], tasks: [], commissions: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
     zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
@@ -1476,10 +1557,11 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, projects, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
+    const [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
@@ -1492,7 +1574,7 @@ export default function SolarPortal() {
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
       ]);
-    const firstError = [quotes, projects, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
+    const firstError = [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
@@ -1500,6 +1582,7 @@ export default function SolarPortal() {
     setData({
       quotes: quotes.data ?? [],
       projects: projects.data ?? [],
+      tasks: tasks.data ?? [],
       commissions: commissions.data ?? [],
       leads: leads.data ?? [],
       receipts: receipts.data ?? [],
@@ -1556,11 +1639,17 @@ export default function SolarPortal() {
     setView('quotes');
     window.setTimeout(() => document.getElementById('quote-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
+  const openProject = (id) => {
+    setOpenProjectId(id);
+    setView('projects');
+    window.setTimeout(() => document.getElementById('project-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
   const navigation = [
     ['overview', 'Resumen'],
     ['new', 'Nueva cotización'],
     ['quotes', 'Oportunidades'],
     ['projects', 'Proyectos'],
+    ['agenda', 'Agenda'],
     ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
   ];
 
@@ -1586,7 +1675,8 @@ export default function SolarPortal() {
         {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
         {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
         {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
-        {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} />}
+        {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
+        {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
