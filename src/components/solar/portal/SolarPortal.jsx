@@ -23,6 +23,38 @@ const STATUS_LABELS = {
   vencida: 'Vencida',
 };
 const STATUS_OPTIONS = ['borrador', 'preliminar', 'validada', 'enviada', 'aceptada', 'rechazada', 'vencida'];
+const PROJECT_STATUS_LABELS = {
+  sold_pending_validation: 'Entrega comercial',
+  site_survey_scheduled: 'Visita programada',
+  engineering: 'Ingeniería',
+  documents_pending: 'Expediente pendiente',
+  ready_for_submission: 'Listo para CFE',
+  submitted_to_cfe: 'Ingresado a CFE',
+  cfe_observation: 'Observación CFE',
+  approved_for_installation: 'Aprobado para instalar',
+  installation_scheduled: 'Instalación programada',
+  installation_in_progress: 'En instalación',
+  installed_pending_interconnection: 'Instalado, espera interconexión',
+  meter_change_pending: 'Cambio de medidor',
+  commissioning: 'Puesta en marcha',
+  operational: 'Operando',
+  on_hold: 'En pausa',
+  cancelled: 'Cancelado',
+};
+const PROJECT_HEALTH_LABELS = {
+  on_track: 'En tiempo',
+  at_risk: 'En riesgo',
+  blocked: 'Bloqueado',
+  overdue: 'Vencido',
+};
+const DOCUMENT_STAGE_LABELS = {
+  commercial: 'Comercial',
+  site_survey: 'Levantamiento',
+  engineering: 'Ingeniería',
+  cfe: 'Interconexión CFE',
+  installation: 'Instalación',
+  handover: 'Entrega',
+};
 const money = new Intl.NumberFormat('es-MX', {
   style: 'currency',
   currency: 'MXN',
@@ -274,7 +306,7 @@ function Bootstrap({ session, onReady }) {
 function Overview({ data, profile, setView, onOpenQuote }) {
   const won = data.quotes.filter((quote) => quote.status === 'aceptada');
   const open = data.quotes.filter((quote) => !['aceptada', 'rechazada', 'vencida'].includes(quote.status));
-  const commission = won.reduce((sum, quote) => sum + Number(quote.commission_amount_mxn ?? 0), 0);
+  const commission = data.commissions.reduce((sum, item) => sum + Number(item.payable_amount_mxn ?? 0), 0);
   const total = won.reduce((sum, quote) => sum + Number(quote.total_mxn ?? 0), 0);
 
   return (
@@ -292,8 +324,8 @@ function Overview({ data, profile, setView, onOpenQuote }) {
       <div className="sp-ledger">
         <div><span>Oportunidades abiertas</span><strong>{open.length}</strong><small>requieren seguimiento</small></div>
         <div><span>Ventas cerradas</span><strong>{won.length}</strong><small>{money.format(total)} vendidos</small></div>
-        <div><span>Comisión registrada</span><strong>{money.format(commission)}</strong><small>sobre ventas cerradas</small></div>
-        <div><span>Recibos captados</span><strong>{data.receipts.length}</strong><small>con trazabilidad</small></div>
+        <div><span>Comisión proyectada</span><strong>{money.format(commission)}</strong><small>base antes de IVA</small></div>
+        <div><span>Proyectos activos</span><strong>{data.projects.filter((project) => !['operational', 'cancelled'].includes(project.status)).length}</strong><small><button type="button" className="sp-link-button" onClick={() => setView('projects')}>abrir operación</button></small></div>
       </div>
 
       <div className="sp-split">
@@ -851,6 +883,148 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
   );
 }
 
+function Projects({ data, refresh }) {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedId, setSelectedId] = useState(data.projects[0]?.id ?? null);
+  const [busyId, setBusyId] = useState('');
+  const [message, setMessage] = useState('');
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleProjects = data.projects.filter((project) => {
+    const haystack = [
+      project.folio,
+      project.customer_name,
+      project.service_number,
+      project.cfe_tracking_folio,
+      project.solar_quotes?.folio,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return (!normalizedSearch || haystack.includes(normalizedSearch))
+      && (statusFilter === 'all' || project.status === statusFilter);
+  });
+  const selected = data.projects.find((project) => project.id === selectedId)
+    ?? visibleProjects[0]
+    ?? null;
+  const blocked = data.projects.filter((project) => ['blocked', 'overdue'].includes(project.health));
+  const cfeOpen = data.projects.filter((project) => [
+    'ready_for_submission', 'submitted_to_cfe', 'cfe_observation', 'meter_change_pending',
+  ].includes(project.status));
+  const installations = data.projects.filter((project) => [
+    'approved_for_installation', 'installation_scheduled', 'installation_in_progress',
+  ].includes(project.status));
+
+  async function completeTask(task) {
+    setBusyId(task.id);
+    setMessage('');
+    const { error } = await getSupabaseClient()
+      .from('solar_project_tasks')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('id', task.id);
+    setBusyId('');
+    if (error) return setMessage(errorMessage(error));
+    setMessage('Tarea completada y registrada en el proyecto.');
+    await refresh();
+  }
+
+  const requiredChecklist = selected?.solar_project_checklist_items?.filter((item) => item.required) ?? [];
+  const completedChecklist = requiredChecklist.filter((item) => item.status === 'complete').length;
+  const integrity = requiredChecklist.length
+    ? Math.round((completedChecklist / requiredChecklist.length) * 100)
+    : 0;
+  const pendingTasks = (selected?.solar_project_tasks ?? [])
+    .filter((task) => !['completed', 'cancelled'].includes(task.status))
+    .sort((a, b) => String(a.due_at ?? '9999').localeCompare(String(b.due_at ?? '9999')));
+  const documentsByStage = (selected?.solar_project_documents ?? []).reduce((groups, document) => {
+    const stage = document.solar_document_requirements?.stage ?? 'commercial';
+    groups[stage] = [...(groups[stage] ?? []), document];
+    return groups;
+  }, {});
+  const commission = selected?.solar_commissions?.[0];
+
+  return (
+    <section className="sp-view">
+      <header className="sp-view-header">
+        <div><p className="sp-section-number">OPERACIÓN / PROYECTOS</p><h1>De la venta a la energía.</h1></div>
+        <p className="sp-header-note">Cada venta aceptada abre automáticamente expediente, tareas y control de comisión antes de IVA.</p>
+      </header>
+
+      <div className="sp-ledger">
+        <div><span>Proyectos activos</span><strong>{data.projects.filter((project) => !['operational', 'cancelled'].includes(project.status)).length}</strong><small>requieren ejecución</small></div>
+        <div><span>Bloqueados o vencidos</span><strong>{blocked.length}</strong><small>acción prioritaria</small></div>
+        <div><span>En flujo CFE</span><strong>{cfeOpen.length}</strong><small>expediente o seguimiento</small></div>
+        <div><span>Por instalar</span><strong>{installations.length}</strong><small>capacidad operativa</small></div>
+      </div>
+
+      <div className="sp-quote-filters">
+        <label className="sp-field"><span>Buscar proyecto</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Proyecto, cliente, servicio o folio CFE" /></label>
+        <label className="sp-field"><span>Etapa</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todas</option>{Object.entries(PROJECT_STATUS_LABELS).map(([status, label]) => <option key={status} value={status}>{label}</option>)}</select></label>
+      </div>
+
+      {data.projects.length ? <>
+        <div className="sp-table-wrap sp-table-wrap--full">
+          <table>
+            <thead><tr><th>Proyecto</th><th>Cliente</th><th>Responsable</th><th>Etapa</th><th>Salud</th><th>Próxima acción</th></tr></thead>
+            <tbody>{visibleProjects.map((project) => <tr key={project.id} className={selected?.id === project.id ? 'is-selected' : ''}>
+              <td><button type="button" className="sp-link-button sp-folio" onClick={() => setSelectedId(project.id)}>{project.folio}</button><small>{project.solar_quotes?.folio}</small></td>
+              <td><strong>{project.customer_name}</strong><small>{project.service_number ? `Servicio ${project.service_number}` : 'Servicio por confirmar'}</small></td>
+              <td>{data.profileMap[project.seller_user_id]?.full_name ?? 'Sin asignar'}</td>
+              <td><span className="sp-status">{PROJECT_STATUS_LABELS[project.status] ?? project.status}</span></td>
+              <td><span className={`sp-health sp-health--${project.health}`}>{PROJECT_HEALTH_LABELS[project.health] ?? project.health}</span></td>
+              <td><button type="button" className="sp-text-button" onClick={() => setSelectedId(project.id)}>{project.next_action ?? 'Abrir proyecto'}</button></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+
+        {selected && <article className="sp-project" id="project-detail">
+          <header className="sp-project-hero">
+            <div><p className="sp-section-number">{selected.folio} / {PROJECT_STATUS_LABELS[selected.status]}</p><h2>{selected.customer_name}</h2><p>{selected.next_action ?? 'Define la siguiente acción del proyecto.'}</p></div>
+            <div className="sp-project-score"><strong>{integrity}%</strong><span>expediente requerido completo</span></div>
+          </header>
+
+          {message && <p className="sp-inline-notice">{message}</p>}
+          {selected.blocked_reason && <p className="sp-inline-notice sp-inline-notice--warning"><strong>Bloqueo:</strong> {selected.blocked_reason}</p>}
+
+          <div className="sp-project-facts">
+            <div><span>Inversión acordada</span><strong>{money.format(Number(selected.agreed_total_mxn))}</strong></div>
+            <div><span>Base antes de IVA</span><strong>{money.format(Number(selected.amount_before_vat_mxn))}</strong></div>
+            <div><span>Comisión</span><strong>{commission ? `${number.format(Number(commission.rate_percent))}% · ${money.format(Number(commission.payable_amount_mxn))}` : 'Sin vendedor'}</strong><small>{commission?.requires_review ? 'Requiere revisión administrativa' : commission?.status}</small></div>
+            <div><span>Folio CFE</span><strong>{selected.cfe_tracking_folio ?? 'Pendiente'}</strong></div>
+          </div>
+
+          <div className="sp-project-columns">
+            <section>
+              <div className="sp-subhead"><h2>Expediente</h2><span>{completedChecklist} de {requiredChecklist.length} requisitos</span></div>
+              <div className="sp-progress" aria-label={`Expediente ${integrity}% completo`}><i style={{ width: `${integrity}%` }} /></div>
+              <div className="sp-dossier">
+                {Object.entries(DOCUMENT_STAGE_LABELS).map(([stage, label]) => {
+                  const stageDocuments = documentsByStage[stage] ?? [];
+                  if (!stageDocuments.length) return null;
+                  return <div className="sp-dossier-stage" key={stage}>
+                    <h3>{label}</h3>
+                    {stageDocuments.map((document) => <div className="sp-document-row" key={document.id}>
+                      <span className={`sp-document-state sp-document-state--${document.status}`} aria-hidden="true" />
+                      <div><strong>{document.title}</strong><small>{document.solar_document_requirements?.requirement_scope === 'conditional' ? 'Condicional' : document.solar_document_requirements?.requirement_scope === 'regulatory' ? 'Regulatorio' : 'Control CDSE'}</small></div>
+                      <b>{document.status === 'approved' ? 'Aprobado' : document.status === 'uploaded' ? 'Por revisar' : document.status === 'not_applicable' ? 'No aplica' : 'Pendiente'}</b>
+                    </div>)}
+                  </div>;
+                })}
+              </div>
+            </section>
+
+            <aside className="sp-project-agenda">
+              <p className="sp-section-number">PRÓXIMAS ACCIONES</p>
+              <h2>Agenda del proyecto</h2>
+              {pendingTasks.length ? pendingTasks.map((task) => <div className="sp-task" key={task.id}>
+                <div><strong>{task.title}</strong><small>{task.due_at ? new Date(task.due_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin vencimiento'} · {data.profileMap[task.assigned_to]?.full_name ?? 'Sin asignar'}</small></div>
+                <button type="button" disabled={busyId === task.id} onClick={() => completeTask(task)}>{busyId === task.id ? '…' : 'Completar'}</button>
+              </div>) : <p className="sp-header-note">No hay tareas abiertas. El administrador puede programar la siguiente etapa.</p>}
+            </aside>
+          </div>
+        </article>}
+      </> : <EmptyState title="Aún no hay proyectos operativos" detail="Al marcar una cotización como Venta cerrada, el portal generará el proyecto, expediente, tareas iniciales y registro de comisión." />}
+    </section>
+  );
+}
+
 function Leads({ data, refresh }) {
   const [message, setMessage] = useState('');
   const sellers = data.profiles.filter((item) => item.role === 'seller' && item.active);
@@ -1108,7 +1282,7 @@ export default function SolarPortal() {
   const [openQuoteId, setOpenQuoteId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
-    quotes: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
+    quotes: [], projects: [], commissions: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
     zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
@@ -1134,9 +1308,11 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
+    const [quotes, projects, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference)), solar_project_checklist_items(*), solar_project_tasks(*), solar_commissions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
         client.from('solar_modules').select('*').order('watts'),
@@ -1148,13 +1324,15 @@ export default function SolarPortal() {
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
       ]);
-    const firstError = [quotes, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
+    const firstError = [quotes, projects, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
     const moduleRows = modules.data ?? [];
     setData({
       quotes: quotes.data ?? [],
+      projects: projects.data ?? [],
+      commissions: commissions.data ?? [],
       leads: leads.data ?? [],
       receipts: receipts.data ?? [],
       modules: moduleRows,
@@ -1214,6 +1392,7 @@ export default function SolarPortal() {
     ['overview', 'Resumen'],
     ['new', 'Nueva cotización'],
     ['quotes', 'Oportunidades'],
+    ['projects', 'Proyectos'],
     ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
   ];
 
@@ -1239,6 +1418,7 @@ export default function SolarPortal() {
         {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
         {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
         {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
+        {view === 'projects' && <Projects data={data} refresh={() => load(session)} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
