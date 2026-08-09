@@ -1,6 +1,6 @@
 # CDSE Solar — modelo operativo y roadmap México
 
-Fecha de corte: 8 de agosto de 2026.
+Fecha de corte: 9 de agosto de 2026.
 
 ## Estado de implementación
 
@@ -13,6 +13,7 @@ Fecha de corte: 8 de agosto de 2026.
 - **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
 - **Fase 5 implementada:** reembolsos autorizables, costos presupuestados/reales, margen, reversos y recuperación de comisiones, reporte por periodo/vendedor y CSV auxiliar. Como mejora posterior de campo permanece la carga fotográfica reanudable en segundo plano.
 - **Fase 6 base implementada:** activos y garantías desde la instalación, casos de servicio con objetivos internos, generación real vs propuesta, satisfacción y autorización explícita de referidos.
+- **Funciones y acceso implementados:** perfiles de ventas, operaciones, ingeniería, instalación, finanzas y consulta; navegación por función, pertenencia explícita por proyecto, guardas de acción en base de datos, suspensión de cuentas y bitácora de asignaciones.
 
 ## 1. Objetivo
 
@@ -255,6 +256,8 @@ Principios:
 - cambios críticos con actor, fecha, valor anterior/nuevo y motivo;
 - la aprobación debe hacerla preferentemente un segundo administrador; mientras exista un único administrador que también vende, una autorización propia exige justificación excepcional y queda auditada;
 - quien ejecuta una revisión técnica no modifica la evidencia original.
+
+La matriz ejecutable, el flujo de alta y la separación de responsabilidades se documentan en `docs/SOLAR_ROLES_Y_PERMISOS.md`.
 
 ## 8. Modelo de datos
 

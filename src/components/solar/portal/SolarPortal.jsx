@@ -6,6 +6,7 @@ import { extractReceiptText } from '../../../lib/solar/pdf-text.js';
 import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import { calculateInverterSizing, selectSuggestedInverter } from '../../../lib/solar/inverter-sizing.mjs';
+import { STAFF_ROLES, canOpenModule, canPerform, navigationForRole, roleLabel } from '../../../lib/solar/access-control.mjs';
 import { COST_CATEGORY_LABELS, financeReportRows, financeRowsToCsv, projectFinancials } from '../../../lib/solar/financial-control.mjs';
 import {
   downloadAuthorizationLetter,
@@ -985,7 +986,9 @@ function Quotes({ data, refresh, isAdmin, openQuoteId, onOpenQuote }) {
 }
 
 function Agenda({ data, profile, isAdmin, refresh, onOpenProject }) {
-  const [ownerFilter, setOwnerFilter] = useState(isAdmin ? 'all' : 'mine');
+  const canManageTasks = canPerform(profile.role, 'project.tasks');
+  const teamView = isAdmin || ['operations', 'finance'].includes(profile.role);
+  const [ownerFilter, setOwnerFilter] = useState(teamView ? 'all' : 'mine');
   const [typeFilter, setTypeFilter] = useState('all');
   const [busyId, setBusyId] = useState('');
   const [message, setMessage] = useState('');
@@ -1039,7 +1042,7 @@ function Agenda({ data, profile, isAdmin, refresh, onOpenProject }) {
         {tasks.length ? tasks.map((task) => <article className="sp-agenda-row" key={task.id}>
           <time>{task.due_at ? new Date(task.due_at).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Por programar'}</time>
           <div><span>{TASK_TYPE_LABELS[task.task_type] ?? task.task_type}</span><strong>{task.title}</strong><small>{task.solar_projects?.folio} · {task.solar_projects?.customer_name} · {data.profileMap[task.assigned_to]?.full_name ?? 'Sin asignar'}</small></div>
-          <div className="sp-agenda-actions"><button type="button" onClick={() => onOpenProject(task.project_id)}>Proyecto</button>{(isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => complete(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}</div>
+          <div className="sp-agenda-actions"><button type="button" onClick={() => onOpenProject(task.project_id)}>Proyecto</button>{canManageTasks && (isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => complete(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}</div>
         </article>) : <p>No hay compromisos en este bloque.</p>}
       </section>)}
     </div>
@@ -1047,7 +1050,8 @@ function Agenda({ data, profile, isAdmin, refresh, onOpenProject }) {
 }
 
 function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
-  const eligibleProjects = data.projects.filter((project) => isAdmin || project.seller_user_id === profile.user_id);
+  const canCapturePayment = canPerform(profile.role, 'finance.capture');
+  const eligibleProjects = data.projects.filter((project) => isAdmin || profile.role === 'finance' || project.seller_user_id === profile.user_id);
   const [selectedId, setSelectedId] = useState(eligibleProjects[0]?.id ?? null);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState('');
@@ -1317,14 +1321,14 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
               {isAdmin ? <><b>{money.format(Number(schedule.amount_mxn))}</b><input id={`schedule-due-${schedule.id}`} aria-label={`Vencimiento ${schedule.label}`} type="date" defaultValue={schedule.due_at ?? ''} /><button type="button" className="sp-text-button" disabled={busy === `schedule-${schedule.id}`} onClick={() => saveSchedule(schedule)}>Guardar fecha</button></> : <><b>{money.format(Number(schedule.amount_mxn))}</b><time>{schedule.due_at ? new Date(`${schedule.due_at}T12:00:00`).toLocaleDateString('es-MX') : 'Sin fecha'}</time></>}
             </article>)}
           </div>
-          <form className="sp-payment-form" onSubmit={recordPayment}>
+          {canCapturePayment && <form className="sp-payment-form" onSubmit={recordPayment}>
             <label className="sp-field"><span>Aplicar a</span><select value={paymentForm.scheduleId} onChange={(event) => { const schedule = schedules.find((item) => item.id === event.target.value); setPaymentForm({ ...paymentForm, scheduleId: event.target.value, amount: schedule ? String(Math.max(Number(schedule.amount_mxn) - Number(schedule.paid_amount_mxn), 0)) : paymentForm.amount }); }}><option value="">Sin concepto</option>{schedules.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
             <label className="sp-field"><span>Importe recibido</span><input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} required /></label>
             <label className="sp-field"><span>Fecha y hora</span><input type="datetime-local" value={paymentForm.receivedAt} onChange={(event) => setPaymentForm({ ...paymentForm, receivedAt: event.target.value })} required /></label>
             <label className="sp-field"><span>Medio</span><select value={paymentForm.method} onChange={(event) => setPaymentForm({ ...paymentForm, method: event.target.value })}><option value="transfer">Transferencia</option><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="check">Cheque</option><option value="financing">Financiamiento</option><option value="other">Otro</option></select></label>
             <label className="sp-field"><span>Referencia</span><input value={paymentForm.reference} onChange={(event) => setPaymentForm({ ...paymentForm, reference: event.target.value })} placeholder="Folio bancario o recibo" /></label>
             <button className="sp-button sp-button--primary" disabled={busy === 'payment'}>{busy === 'payment' ? 'Registrando…' : 'Registrar para conciliación'}</button>
-          </form>
+          </form>}
           <div className="sp-payment-ledger">
             {payments.map((payment) => <article key={payment.id}><time>{new Date(payment.received_at).toLocaleDateString('es-MX')}</time><div><strong>{money.format(Number(payment.amount_mxn))}</strong><small>{payment.payment_method} · {payment.reference || 'sin referencia'}</small></div><span className={`sp-finance-status sp-finance-status--${payment.status}`}>{PAYMENT_STATUS_LABELS[payment.status]}</span><div>{isAdmin && payment.status === 'pending' && <><button type="button" onClick={() => decidePayment(payment, 'reconciled')}>Conciliar</button><button type="button" onClick={() => decidePayment(payment, 'rejected')}>Rechazar</button></>}{['reconciled', 'refunded'].includes(payment.status) && <button type="button" onClick={() => setRefundForm({ ...refundForm, paymentId: payment.id, amount: '', reason: '', reference: payment.reference ?? '' })}>Reembolso</button>}</div></article>)}
             {!payments.length && <p>Aún no hay cobros registrados.</p>}
@@ -1360,6 +1364,12 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
 }
 
 function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
+  const permissions = {
+    tasks: canPerform(profile.role, 'project.tasks'),
+    documents: canPerform(profile.role, 'project.documents'),
+    survey: canPerform(profile.role, 'survey.manage'),
+    engineering: canPerform(profile.role, 'engineering.manage'),
+  };
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(data.projects[0]?.id ?? null);
@@ -1864,7 +1874,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
                 </dl> : <p className="sp-track-empty">Registra techo, sombras, tablero, acometida, ruta y condiciones de seguridad durante la visita.</p>}
                 {latestSurvey?.rejection_reason && <p className="sp-review-note"><strong>Corrección:</strong> {latestSurvey.rejection_reason}</p>}
                 <div className="sp-track-actions">
-                  {latestSurvey?.status !== 'submitted' && <button type="button" onClick={beginSurvey}>{latestSurvey ? 'Abrir levantamiento' : 'Capturar visita'}</button>}
+                  {permissions.survey && latestSurvey?.status !== 'submitted' && <button type="button" onClick={beginSurvey}>{latestSurvey ? 'Abrir levantamiento' : 'Capturar visita'}</button>}
                   {isAdmin && latestSurvey?.status === 'submitted' && <><button type="button" onClick={() => reviewSurvey(latestSurvey, 'approved')} disabled={busyId === latestSurvey.id}>Aprobar</button><button type="button" onClick={() => reviewSurvey(latestSurvey, 'rejected')} disabled={busyId === latestSurvey.id}>Solicitar corrección</button></>}
                 </div>
               </article>
@@ -1878,13 +1888,13 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
                 </dl> : <p className="sp-track-empty">Documenta módulos, inversor, strings, protecciones, conductores, tierra física y vincula el unifilar aprobado.</p>}
                 {latestEngineering?.rejection_reason && <p className="sp-review-note"><strong>Corrección:</strong> {latestEngineering.rejection_reason}</p>}
                 <div className="sp-track-actions">
-                  {latestEngineering?.status !== 'submitted' && <button type="button" onClick={beginEngineering}>{latestEngineering ? 'Abrir ingeniería' : 'Preparar diseño'}</button>}
+                  {permissions.engineering && latestEngineering?.status !== 'submitted' && <button type="button" onClick={beginEngineering}>{latestEngineering ? 'Abrir ingeniería' : 'Preparar diseño'}</button>}
                   {isAdmin && latestEngineering?.status === 'submitted' && <><button type="button" onClick={() => reviewEngineering(latestEngineering, 'approved')} disabled={busyId === latestEngineering.id}>Aprobar</button><button type="button" onClick={() => reviewEngineering(latestEngineering, 'rejected')} disabled={busyId === latestEngineering.id}>Solicitar corrección</button></>}
                 </div>
               </article>
             </div>
 
-            {surveyForm && <form className="sp-technical-form" onSubmit={saveSurvey}>
+            {permissions.survey && surveyForm && <form className="sp-technical-form" onSubmit={saveSurvey}>
               <div className="sp-subhead"><div><p className="sp-section-number">FORMATO DE CAMPO</p><h2>Levantamiento técnico</h2></div><button type="button" onClick={() => setSurveyForm(null)}>Cerrar</button></div>
               <p className="sp-form-guidance">Puedes guardar un borrador desde el sitio. Para enviarlo a revisión deben quedar completos los datos esenciales eléctricos y de montaje.</p>
               <div className="sp-form-grid sp-form-grid--technical">
@@ -1912,7 +1922,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
               <div className="sp-form-actions"><button className="sp-button sp-button--secondary" name="intent" value="draft" disabled={busyId === 'site-survey'}>Guardar borrador</button><button className="sp-button sp-button--primary" name="intent" value="submit" disabled={busyId === 'site-survey'}>Enviar a revisión</button></div>
             </form>}
 
-            {engineeringForm && <form className="sp-technical-form" onSubmit={saveEngineering}>
+            {permissions.engineering && engineeringForm && <form className="sp-technical-form" onSubmit={saveEngineering}>
               <div className="sp-subhead"><div><p className="sp-section-number">CONTROL DE DISEÑO</p><h2>Revisión de ingeniería</h2></div><button type="button" onClick={() => setEngineeringForm(null)}>Cerrar</button></div>
               <p className="sp-form-guidance">La relación DC/AC se calcula automáticamente. Para enviar a revisión debe existir una versión aprobada del diagrama unifilar.</p>
               <div className="sp-engineering-ratio"><span>Relación DC/AC</span><strong className={engineeringRatio > 120 ? 'is-over' : ''}>{engineeringRatio ? `${number.format(engineeringRatio)}%` : '—'}</strong><small>{engineeringRatio > 120 ? 'Supera el máximo permitido de 120%' : 'Límite de sobredimensionamiento: 120%'}</small></div>
@@ -1969,7 +1979,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
                           {files.length > 0 && <div className="sp-file-list">{files.map((file) => <button type="button" key={file.id} onClick={() => openProjectFile(file)}>{file.original_name}</button>)}</div>}
                         </div>
                         <div className="sp-document-actions">
-                          {document.status !== 'not_applicable' && <label className="sp-upload-action">{uploadingId === document.id ? 'Subiendo…' : files.length ? 'Agregar archivo' : 'Subir archivo'}<input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" disabled={Boolean(uploadingId)} onChange={(event) => { uploadDocument(document, event.target.files); event.target.value = ''; }} /></label>}
+                          {permissions.documents && document.status !== 'not_applicable' && <label className="sp-upload-action">{uploadingId === document.id ? 'Subiendo…' : files.length ? 'Agregar archivo' : 'Subir archivo'}<input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" disabled={Boolean(uploadingId)} onChange={(event) => { uploadDocument(document, event.target.files); event.target.value = ''; }} /></label>}
                           {isAdmin && document.status === 'uploaded' && <><button type="button" onClick={() => reviewDocument(document, 'approved')} disabled={busyId === document.id}>Aprobar</button><button type="button" onClick={() => reviewDocument(document, 'rejected')} disabled={busyId === document.id}>Rechazar</button></>}
                           {isAdmin && isConditional && <button type="button" onClick={() => setApplicability(document, document.status === 'not_applicable')} disabled={busyId === document.id}>{document.status === 'not_applicable' ? 'Requerir' : 'No aplica'}</button>}
                         </div>
@@ -1982,8 +1992,8 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
 
             <aside className="sp-project-agenda">
               <p className="sp-section-number">PRÓXIMAS ACCIONES</p>
-              <div className="sp-subhead"><h2>Agenda del proyecto</h2><button type="button" onClick={() => setTaskForm(taskForm ? null : { title: '', type: 'follow_up', dueAt: '', assignedTo: selected.seller_user_id ?? profile.user_id, priority: 'normal', description: '' })}>{taskForm ? 'Cancelar' : '+ Agregar'}</button></div>
-              {taskForm && <form className="sp-task-form" onSubmit={createTask}>
+              <div className="sp-subhead"><h2>Agenda del proyecto</h2>{permissions.tasks && <button type="button" onClick={() => setTaskForm(taskForm ? null : { title: '', type: 'follow_up', dueAt: '', assignedTo: selected.seller_user_id ?? profile.user_id, priority: 'normal', description: '' })}>{taskForm ? 'Cancelar' : '+ Agregar'}</button>}</div>
+              {permissions.tasks && taskForm && <form className="sp-task-form" onSubmit={createTask}>
                 <label className="sp-field"><span>Compromiso</span><input required value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} placeholder="Ej. Recibir identificación del titular" /></label>
                 <div className="sp-form-grid">
                   <label className="sp-field"><span>Tipo</span><select value={taskForm.type} onChange={(event) => setTaskForm({ ...taskForm, type: event.target.value })}><option value="follow_up">Seguimiento</option><option value="site_survey">Visita técnica</option><option value="customer_document">Documento del cliente</option><option value="engineering_review">Revisión de ingeniería</option><option value="cfe_submission">Ingreso CFE</option><option value="cfe_follow_up">Seguimiento CFE</option><option value="installation">Instalación</option><option value="inspection">Inspección/pruebas</option><option value="meter_change">Cambio de medidor</option><option value="commissioning">Puesta en marcha</option><option value="collection">Cobro</option><option value="warranty">Garantía</option><option value="other">Otro</option></select></label>
@@ -1995,7 +2005,7 @@ function Projects({ data, refresh, isAdmin, profile, openProjectId }) {
               </form>}
               {pendingTasks.length ? pendingTasks.map((task) => <div className="sp-task" key={task.id}>
                 <div><strong>{task.title}</strong><small>{task.due_at ? new Date(task.due_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin vencimiento'} · {data.profileMap[task.assigned_to]?.full_name ?? 'Sin asignar'}</small></div>
-                {(isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => completeTask(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}
+                {permissions.tasks && (isAdmin || task.assigned_to === profile.user_id) && <button type="button" disabled={busyId === task.id} onClick={() => completeTask(task)}>{busyId === task.id ? '…' : 'Completar'}</button>}
               </div>) : <p className="sp-header-note">No hay tareas abiertas. El administrador puede programar la siguiente etapa.</p>}
             </aside>
           </div>
@@ -2191,7 +2201,7 @@ function Catalog({ data, refresh }) {
   );
 }
 
-function Team({ data, session, refresh }) {
+function SellerTeamLegacy({ data, session, refresh }) {
   const [form, setForm] = useState({ fullName: '', email: '', password: '', commissionRate: '5' });
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -2253,6 +2263,115 @@ function Team({ data, session, refresh }) {
   );
 }
 
+function Team({ data, session, refresh }) {
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', role: 'seller', commissionRate: '5' });
+  const assignable = data.profiles.filter((item) => item.role !== 'admin' && item.active);
+  const [assignment, setAssignment] = useState({ userId: '', projectId: '' });
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function createStaff(event) {
+    event.preventDefault();
+    setBusy(true); setMessage('');
+    const response = await fetch(`${getSupabaseFunctionsUrl()}/manage-solar-seller`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action: 'create', ...form }),
+    });
+    const body = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(body.message ?? 'No se pudo crear el acceso.');
+    setMessage('Acceso creado. Comparte la contraseña temporal por un canal seguro.');
+    setForm({ fullName: '', email: '', password: '', role: 'seller', commissionRate: '5' });
+    await refresh();
+  }
+
+  async function toggleStaff(member) {
+    setBusy(true); setMessage('');
+    const response = await fetch(`${getSupabaseFunctionsUrl()}/manage-solar-seller`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action: 'update', userId: member.user_id, active: !member.active }),
+    });
+    const body = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(body.message ?? 'No se pudo cambiar el acceso.');
+    setMessage(member.active ? 'Acceso suspendido para nuevos ingresos.' : 'Acceso restaurado.');
+    await refresh();
+  }
+
+  async function assignProject(event) {
+    event.preventDefault();
+    if (!assignment.userId || !assignment.projectId) return;
+    setBusy(true); setMessage('');
+    const { error } = await getSupabaseClient().rpc('assign_solar_project_member', {
+      p_project_id: assignment.projectId,
+      p_user_id: assignment.userId,
+    });
+    setBusy(false);
+    if (error) return setMessage(errorMessage(error));
+    setMessage('Proyecto asignado con la función del integrante y registrado en auditoría.');
+    await refresh();
+  }
+
+  async function unassignProject(member) {
+    if (!window.confirm('¿Retirar este acceso al proyecto? El evento quedará en auditoría.')) return;
+    setBusy(true); setMessage('');
+    const { error } = await getSupabaseClient().rpc('unassign_solar_project_member', {
+      p_project_id: member.project_id,
+      p_user_id: member.user_id,
+    });
+    setBusy(false);
+    if (error) return setMessage(errorMessage(error));
+    setMessage('Acceso retirado; el historial se conserva.');
+    await refresh();
+  }
+
+  return <section className="sp-view">
+    <header className="sp-view-header"><div><p className="sp-section-number">ADMINISTRACIÓN / CONTROL DE ACCESO</p><h1>Equipo, funciones y proyectos.</h1></div><p className="sp-header-note">Cada integrante recibe sólo los módulos de su función y únicamente los expedientes que le asignes.</p></header>
+    {message && <p className="sp-inline-notice" role="status">{message}</p>}
+    <div className="sp-access-summary" aria-label="Resumen de accesos">
+      <div><span>Integrantes activos</span><strong>{data.profiles.filter((item) => item.active).length}</strong></div>
+      <div><span>Asignaciones activas</span><strong>{data.memberships.filter((item) => item.active).length}</strong></div>
+      <div><span>Eventos auditados</span><strong>{data.accessEvents.length}</strong></div>
+    </div>
+    <div className="sp-admin-grid">
+      <div className="sp-catalog-list">
+        {data.profiles.map((member) => <div className="sp-seller-row sp-staff-row" key={member.user_id}>
+          <div><span className={`sp-presence ${member.active ? 'is-active' : ''}`}></span><div><strong>{member.full_name}</strong><small>{roleLabel(member.role)} · {member.active ? 'Acceso activo' : 'Acceso suspendido'}</small></div></div>
+          {member.role === 'seller' && <b>{number.format(member.commission_rate)}%</b>}
+          {member.role !== 'admin' && <button type="button" disabled={busy} onClick={() => toggleStaff(member)}>{member.active ? 'Suspender' : 'Activar'}</button>}
+        </div>)}
+      </div>
+      <form className="sp-admin-form" onSubmit={createStaff}>
+        <h2>Dar de alta integrante</h2>
+        <label className="sp-field"><span>Nombre completo</span><input value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} required /></label>
+        <label className="sp-field"><span>Correo de acceso</span><input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
+        <label className="sp-field"><span>Contraseña temporal</span><input type="password" minLength="10" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
+        <label className="sp-field"><span>Función</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>{Object.entries(STAFF_ROLES).filter(([role]) => role !== 'admin').map(([role, detail]) => <option value={role} key={role}>{detail.label}</option>)}</select><small>{STAFF_ROLES[form.role]?.description}</small></label>
+        {form.role === 'seller' && <label className="sp-field"><span>Comisión sobre base antes de IVA</span><div className="sp-input-suffix"><input type="number" min="5" max="10" step="0.1" value={form.commissionRate} onChange={(event) => setForm({ ...form, commissionRate: event.target.value })} /><span>%</span></div><small>Política CDSE: de 5% a 10% máximo.</small></label>}
+        <button className="sp-button sp-button--primary" disabled={busy}>{busy ? 'Creando acceso…' : 'Crear acceso'}</button>
+      </form>
+    </div>
+    <section className="sp-access-section">
+      <div className="sp-section-heading"><div><p className="sp-section-number">ACCESO POR EXPEDIENTE</p><h2>Asignaciones activas</h2></div><p>La función global define qué puede hacer; la asignación define en cuáles proyectos.</p></div>
+      <form className="sp-assignment-form" onSubmit={assignProject}>
+        <label className="sp-field"><span>Integrante</span><select value={assignment.userId} onChange={(event) => setAssignment({ ...assignment, userId: event.target.value })} required><option value="">Selecciona…</option>{assignable.map((item) => <option value={item.user_id} key={item.user_id}>{item.full_name} · {roleLabel(item.role)}</option>)}</select></label>
+        <label className="sp-field"><span>Proyecto</span><select value={assignment.projectId} onChange={(event) => setAssignment({ ...assignment, projectId: event.target.value })} required><option value="">Selecciona…</option>{data.projects.map((item) => <option value={item.id} key={item.id}>{item.folio} · {item.customer_name}</option>)}</select></label>
+        <button className="sp-button sp-button--primary" disabled={busy || !assignable.length || !data.projects.length}>Asignar proyecto</button>
+      </form>
+      <div className="sp-assignment-list">
+        {data.memberships.filter((item) => item.active).map((item) => {
+          const member = data.profileMap[item.user_id];
+          const project = data.projects.find((projectItem) => projectItem.id === item.project_id);
+          return <article key={item.id}><div><strong>{project?.folio ?? 'Proyecto'}</strong><span>{project?.customer_name ?? 'Expediente restringido'}</span></div><div><strong>{member?.full_name ?? 'Integrante'}</strong><span>{roleLabel(member?.role ?? item.project_role)}</span></div><button type="button" disabled={busy} onClick={() => unassignProject(item)}>Retirar</button></article>;
+        })}
+        {!data.memberships.some((item) => item.active) && <EmptyState title="Sin asignaciones manuales" detail="Ventas conserva sus propios proyectos; el resto del equipo requiere una asignación explícita." />}
+      </div>
+    </section>
+  </section>;
+}
+
 export default function SolarPortal() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -2264,7 +2383,7 @@ export default function SolarPortal() {
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
     quotes: [], projects: [], tasks: [], commissions: [], workOrders: [], crews: [], fieldWorkers: [], cfeCases: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [], inventoryLocations: [], inventoryItems: [], inventoryAllocations: [], inventoryMovements: [],
-    zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
+    zones: [], profiles: [], memberships: [], accessEvents: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
   async function load(currentSession = session) {
@@ -2289,7 +2408,7 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements] =
+    const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, memberships, accessEvents, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_payment_refunds(*), solar_project_cost_entries(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*), solar_assets(*), solar_warranties(*), solar_service_cases(*, solar_service_case_events(*)), solar_generation_readings(*), solar_customer_feedback(*)').order('updated_at', { ascending: false }),
@@ -2309,12 +2428,14 @@ export default function SolarPortal() {
         client.from('solar_financing_options').select('*').order('min_panels'),
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
+        client.from('solar_project_members').select('*').order('assigned_at', { ascending: false }),
+        client.from('solar_access_events').select('*').order('created_at', { ascending: false }).limit(500),
         client.from('solar_inventory_locations').select('*').order('name'),
         client.from('solar_inventory_items').select('*, solar_inventory_balances(*)').order('name'),
         client.from('solar_inventory_allocations').select('*, solar_inventory_items(sku,name,category,unit), solar_inventory_locations(name), solar_projects(folio,customer_name,status,seller_user_id), solar_work_orders(folio,status)').order('created_at'),
         client.from('solar_inventory_movements').select('*, solar_inventory_items(sku,name,category,unit), solar_inventory_locations(name), solar_projects(folio,customer_name), solar_work_orders(folio)').order('created_at', { ascending: false }).limit(500),
       ]);
-    const firstError = [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements]
+    const firstError = [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, memberships, accessEvents, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
@@ -2342,6 +2463,8 @@ export default function SolarPortal() {
       inventoryMovements: inventoryMovements.data ?? [],
       zones: zones.data ?? [],
       profiles: profileRows,
+      memberships: memberships.data ?? [],
+      accessEvents: accessEvents.data ?? [],
       profileMap: Object.fromEntries(profileRows.map((item) => [item.user_id, item])),
       moduleMap: Object.fromEntries(moduleRows.map((item) => [item.id, item])),
       receiptByLead: Object.fromEntries((receipts.data ?? []).map((item) => [item.lead_id, item])),
@@ -2382,6 +2505,7 @@ export default function SolarPortal() {
   if (needsBootstrap) return <Bootstrap session={session} onReady={() => { setChecking(true); load(session); }} />;
 
   const isAdmin = profile?.role === 'admin';
+  const role = profile?.role ?? 'viewer';
   const openQuote = (id) => {
     setOpenQuoteId(id);
     setView('quotes');
@@ -2392,7 +2516,7 @@ export default function SolarPortal() {
     setView('projects');
     window.setTimeout(() => document.getElementById('project-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
-  const navigation = [
+  const navigation = navigationForRole(role, [
     ['overview', 'Resumen'],
     ['new', 'Nueva cotización'],
     ['quotes', 'Oportunidades'],
@@ -2403,8 +2527,11 @@ export default function SolarPortal() {
     ['cfe', 'Seguimiento CFE'],
     ['post-sales', 'Postventa'],
     ['finance', 'Finanzas'],
-    ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
-  ];
+    ['leads', 'Leads y recibos'],
+    ['catalog', 'Catálogo y precios'],
+    ['team', 'Equipo y accesos'],
+  ]);
+  const activeView = canOpenModule(role, view) ? view : 'overview';
 
   return (
     <div className="sp-app">
@@ -2412,32 +2539,32 @@ export default function SolarPortal() {
         <a className="sp-brand" href="/solar"><img src="/logo.jpg" alt="CDSE" /><span>Solar</span></a>
         <nav aria-label="Portal solar">
           {navigation.map(([id, label], index) => (
-            <button className={view === id ? 'is-active' : ''} onClick={() => setView(id)} key={id}>
+            <button className={activeView === id ? 'is-active' : ''} onClick={() => setView(id)} key={id}>
               <span>{String(index + 1).padStart(2, '0')}</span>{label}
             </button>
           ))}
         </nav>
         <div className="sp-user">
           <span>{profile.full_name.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
-          <div><strong>{profile.full_name}</strong><small>{isAdmin ? 'Administrador' : `Vendedor · ${number.format(profile.commission_rate)}%`}</small></div>
+          <div><strong>{profile.full_name}</strong><small>{roleLabel(role)}{role === 'seller' ? ` · ${number.format(profile.commission_rate)}%` : ''}</small></div>
           <button onClick={logout} aria-label="Cerrar sesión">↗</button>
         </div>
       </aside>
       <main className="sp-main">
         {loadError && <div className="sp-global-error" role="alert">{loadError}</div>}
-        {view === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
-        {view === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
-        {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
-        {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
-        {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
-        {view === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
-        {view === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
-        {view === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} />}
-        {view === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
-        {view === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
-        {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
-        {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
-        {view === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
+        {activeView === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
+        {activeView === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
+        {activeView === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
+        {activeView === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
+        {activeView === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {activeView === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {activeView === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
+        {activeView === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} />}
+        {activeView === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
+        {activeView === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {activeView === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
+        {activeView === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
+        {activeView === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
       </main>
     </div>
   );
