@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseClient } from '../../../lib/supabase/client.js';
 import { afterSalesPortfolioMetrics, generationCoverage, warrantyDaysRemaining } from '../../../lib/solar/after-sales.mjs';
@@ -30,7 +30,7 @@ function friendlyError(error) {
 function isoDate(value = new Date()) { return value.toISOString().slice(0, 10); }
 function activeCase(item) { return !['closed', 'cancelled'].includes(item.status); }
 
-export default function PostSales({ data, isAdmin, refresh, onOpenProject }) {
+export default function PostSales({ data, isAdmin, refresh, onOpenProject, openProjectId }) {
   const projects = useMemo(() => data.projects.filter((item) => !['cancelled'].includes(item.status)), [data.projects]);
   const [selectedId, setSelectedId] = useState(projects[0]?.id ?? '');
   const [search, setSearch] = useState('');
@@ -44,6 +44,7 @@ export default function PostSales({ data, isAdmin, refresh, onOpenProject }) {
   const [caseAction, setCaseAction] = useState({ caseId: '', status: 'diagnosing', note: '', assignedTo: '', scheduledAt: '' });
   const [generationForm, setGenerationForm] = useState({ periodStart: `${isoDate().slice(0, 7)}-01`, periodEnd: isoDate(), actualKwh: '', expectedKwh: '', source: 'inverter_portal', sourceReference: '', notes: '' });
   const [feedbackForm, setFeedbackForm] = useState({ surveyStage: 'post_interconnection', npsScore: '', comments: '', referralPermission: false, referralNote: '' });
+  useEffect(() => { if (openProjectId) setSelectedId(openProjectId); }, [openProjectId]);
 
   const visible = projects.filter((project) => {
     const q = search.trim().toLocaleLowerCase('es-MX');

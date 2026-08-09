@@ -1,7 +1,7 @@
 # Auditoría vigente del portal CDSE Solar — agosto de 2026
 
-Fecha de revisión: 8 de agosto de 2026. Evidencia: esquema remoto hasta la
-migración `202608080014`, componentes publicados, 28 pruebas automatizadas,
+Fecha de revisión: 9 de agosto de 2026. Evidencia: esquema remoto hasta la
+migración `202608080015`, componentes publicados, 35 pruebas automatizadas,
 compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
@@ -12,19 +12,20 @@ tipográfica consistente y superficies planas. Evita glassmorphism, neón,
 gradientes de texto y cuadrículas repetitivas de tarjetas.
 
 La deuda visible no es estética sino de escala: `SolarPortal.jsx` conserva áreas
-monolíticas y la barra móvil expone cada módulo en una sola fila desplazable. Los
+monolíticas. La navegación móvil ya agrupa el trabajo y la búsqueda transversal
+abre el expediente exacto por identidad operativa. Los
 diálogos nativos `prompt/confirm` aparecen en decisiones auditables y no ofrecen
 contexto, validación en línea ni recuperación clara.
 
 ## Resumen ejecutivo
 
 - 0 bloqueos críticos vigentes en el flujo implementado.
-- 1 hallazgo alto: perfiles globales limitados a administrador/vendedor.
-- 3 hallazgos medios: navegación móvil, búsqueda global y tamaño del módulo principal.
+- 0 hallazgos altos vigentes.
+- 1 hallazgo medio: tamaño del módulo principal.
 - 3 hallazgos bajos: diálogos nativos, colores de aviso fuera de tokens y falta
   de una política automatizada de retención.
 - Calidad funcional de fases 1–6: **9.0/10**.
-- Cobertura del objetivo completo: **9.1/10**.
+- Cobertura del objetivo completo: **9.5/10**.
 
 ## Evidencia de requisitos ya logrados
 
@@ -43,33 +44,11 @@ contexto, validación en línea ni recuperación clara.
 | Costos y margen | Logrado | migraciones `010`/`011`, reporte por periodo y CSV |
 | Postventa y garantías | Logrado | migración `012`, activos, casos, generación y seguimiento |
 | Inventario comprometido y consumido | Logrado | migración `013`, saldos, partidas, RPC transaccionales y libro mayor |
-
-## Hallazgos altos
-
-### A1. El perfil global no representa todas las funciones
-
-**Ubicación:** `solar_profiles` y administración de usuarios.
-
-**Impacto:** la membresía por proyecto ya admite operaciones, ingeniería,
-instalador, finanzas y consulta, pero el alta de usuarios y la navegación sólo
-modelan administrador/vendedor. No puede delegarse el trabajo sin entregar una
-superficie más amplia de la necesaria.
-
-**Recomendación:** separar perfil global de función por proyecto y aplicar
-permisos por acción, manteniendo administración financiera restringida.
+| Funciones y pertenencia por proyecto | Logrado | migración `015`, guardas por acción y Equipo y accesos |
+| Búsqueda transversal | Logrado | índice autorizado por RLS y acceso por cliente, teléfono, folio, servicio, CFE o serie |
+| Navegación móvil agrupada | Logrado | Inicio, Ventas, Proyectos, Operación y Más según función |
 
 ## Hallazgos medios
-
-### M1. Navegación móvil pierde contexto
-
-Diez módulos compiten en una barra horizontal. En teléfonos el usuario puede no
-descubrir Postventa o Administración. Debe agruparse en Inicio, Ventas, Proyectos,
-Operación y Más, sin ocultar funciones.
-
-### M2. Falta búsqueda transversal
-
-Cada módulo tiene filtros propios, pero no existe una búsqueda por cliente,
-teléfono, folio de cotización/proyecto/CFE, número de servicio o serie instalada.
 
 ### M3. El módulo principal dificulta mantener calidad
 
@@ -106,10 +85,9 @@ Patrones a corregir:
 
 ## Prioridad de ejecución
 
-1. **Inmediato:** perfiles funcionales, permisos por acción y membresía operativa.
-2. **Siguiente:** búsqueda global y navegación móvil agrupada.
-3. **Después:** serialización desde almacén e integración opcional con portales de monitoreo.
-4. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
+1. **Siguiente:** serialización desde almacén hasta activo instalado.
+2. **Después:** integración opcional con portales de monitoreo.
+3. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
 La auditoría no constituye dictamen legal, fiscal, laboral ni eléctrico. La
 validación de formatos CFE locales y política de retención sigue siendo una

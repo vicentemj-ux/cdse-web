@@ -16,6 +16,8 @@ import {
 } from '../../../lib/solar/project-documents.js';
 import Installations from './Installations.jsx';
 import CfeTracking from './CfeTracking.jsx';
+import MobilePortalNavigation from './MobilePortalNavigation.jsx';
+import PortalSearch from './PortalSearch.jsx';
 import {
   getSupabaseClient,
   getSupabaseFunctionsUrl,
@@ -2380,6 +2382,8 @@ export default function SolarPortal() {
   const [view, setView] = useState('overview');
   const [openQuoteId, setOpenQuoteId] = useState(null);
   const [openProjectId, setOpenProjectId] = useState(null);
+  const [openCfeCaseId, setOpenCfeCaseId] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
     quotes: [], projects: [], tasks: [], commissions: [], workOrders: [], crews: [], fieldWorkers: [], cfeCases: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [], inventoryLocations: [], inventoryItems: [], inventoryAllocations: [], inventoryMovements: [],
@@ -2419,7 +2423,7 @@ export default function SolarPortal() {
         client.from('solar_field_workers').select('*').order('full_name'),
         client.from('solar_cfe_cases').select('*, solar_projects(folio,customer_name,status,seller_user_id), solar_cfe_observations(*)').order('submitted_at', { ascending: false, nullsFirst: false }),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
-        client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
+        client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,service_number,seller_user_id').order('created_at', { ascending: false }),
         client.from('solar_modules').select('*').order('watts'),
         client.from('solar_inverters').select('*').order('ac_capacity_kw'),
         client.from('solar_price_options').select('*').order('created_at', { ascending: false }),
@@ -2532,12 +2536,28 @@ export default function SolarPortal() {
     ['team', 'Equipo y accesos'],
   ]);
   const activeView = canOpenModule(role, view) ? view : 'overview';
+  const navigateFromSearch = (result) => {
+    if (result.type === 'quote') return openQuote(result.id);
+    if (result.type === 'project') return openProject(result.projectId ?? result.id);
+    if (result.type === 'asset') {
+      setOpenProjectId(result.projectId);
+      setView('post-sales');
+      return;
+    }
+    if (result.type === 'cfe') {
+      setOpenCfeCaseId(result.id);
+      setView('cfe');
+      return;
+    }
+    setView(result.view);
+  };
 
   return (
     <div className="sp-app">
       <aside className="sp-sidebar">
         <a className="sp-brand" href="/solar"><img src="/logo.jpg" alt="CDSE" /><span>Solar</span></a>
-        <nav aria-label="Portal solar">
+        <button type="button" className="sp-search-trigger" onClick={() => setSearchOpen(true)}><span>⌕</span><strong>Buscar</strong><kbd>Ctrl K</kbd></button>
+        <nav className="sp-desktop-nav" aria-label="Portal solar">
           {navigation.map(([id, label], index) => (
             <button className={activeView === id ? 'is-active' : ''} onClick={() => setView(id)} key={id}>
               <span>{String(index + 1).padStart(2, '0')}</span>{label}
@@ -2559,13 +2579,15 @@ export default function SolarPortal() {
         {activeView === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {activeView === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {activeView === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
-        {activeView === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} />}
-        {activeView === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
+        {activeView === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} openCaseId={openCfeCaseId} />}
+        {activeView === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} openProjectId={openProjectId} /></Suspense>}
         {activeView === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {activeView === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {activeView === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}
         {activeView === 'team' && isAdmin && <Team data={data} session={session} refresh={() => load(session)} />}
       </main>
+      <PortalSearch data={data} navigation={navigation} open={searchOpen} setOpen={setSearchOpen} onNavigate={navigateFromSearch} />
+      <MobilePortalNavigation navigation={navigation} activeView={activeView} onNavigate={setView} onSearch={() => setSearchOpen(true)} onLogout={logout} />
     </div>
   );
 }

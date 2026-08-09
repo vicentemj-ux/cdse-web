@@ -57,7 +57,7 @@ function formFrom(item) {
   };
 }
 
-export default function CfeTracking({ data, isAdmin, refresh, onOpenProject }) {
+export default function CfeTracking({ data, isAdmin, refresh, onOpenProject, openCaseId }) {
   const [selectedId, setSelectedId] = useState(data.cfeCases[0]?.id ?? null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(emptyForm());
@@ -72,6 +72,7 @@ export default function CfeTracking({ data, isAdmin, refresh, onOpenProject }) {
   const overdueFollowups = activeCases.filter((item) => item.next_follow_up_at && new Date(item.next_follow_up_at) < new Date());
   const openObservations = cases.flatMap((item) => item.solar_cfe_observations ?? []).filter((item) => ['open','rejected'].includes(item.status));
   const waitingExternal = activeCases.filter((item) => ['cfe','distributor','supplier','third_party'].includes(item.waiting_on));
+  useEffect(() => { if (openCaseId) setSelectedId(openCaseId); }, [openCaseId]);
   const projectsWithoutCase = data.projects.filter((item) => !cases.some((cfeCase) => cfeCase.project_id === item.id) && !['cancelled','operational'].includes(item.status));
 
   useEffect(() => {
