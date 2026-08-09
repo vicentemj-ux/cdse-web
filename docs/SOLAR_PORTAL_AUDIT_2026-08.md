@@ -1,127 +1,134 @@
-# Auditoría del portal CDSE Solar — agosto de 2026
+# Auditoría vigente del portal CDSE Solar — agosto de 2026
 
-## Resultado ejecutivo
-
-El portal actual es una base comercial funcional: capta el recibo, calcula, genera una propuesta y permite administrar catálogo y vendedores. No es todavía un sistema de operación solar completo. El flujo termina en `cotización aceptada`; desde ahí no existen proyecto, expediente, ingeniería, agenda, instalación, trámite de interconexión, puesta en marcha ni liquidación controlada de comisiones.
-
-La brecha principal no es visual. Es de arquitectura de información y modelo de datos. Agregar más pestañas al componente actual agravaría la complejidad; la siguiente etapa debe introducir el concepto de **Proyecto Solar** como registro central y dividir el producto en módulos por responsabilidad.
-
-Resumen de hallazgos:
-
-- 3 críticos: continuidad operativa, trazabilidad documental y comisión calculada sobre una base incorrecta.
-- 5 altos: permisos, agenda, controles de etapa, arquitectura del frontend y trazabilidad de instalación/CFE.
-- 6 medios: navegación móvil, búsquedas globales, alertas, datos duplicados, privacidad y métricas.
-- 4 bajos: consistencia de etiquetas, estados vacíos, ayudas contextuales y densidad visual.
+Fecha de revisión: 8 de agosto de 2026. Evidencia: esquema remoto hasta la
+migración `202608080011`, componentes publicados, 22 pruebas automatizadas,
+compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
 
-La identidad visual es consistente con CDSE y evita la estética genérica de un CRM. La tipografía, el contraste, el uso del azul marino y la jerarquía editorial son fortalezas. El problema es funcional: `SolarPortal.jsx` concentra autenticación, resumen, cotizador, oportunidades, leads, catálogo y equipo en un solo archivo, y la navegación lateral refleja áreas de pantalla en lugar del ciclo real del proyecto.
+**Aprobado con deuda técnica.** La interfaz no parece un CRM genérico generado
+por IA: conserva una dirección editorial propia, paleta cálida/marino, jerarquía
+tipográfica consistente y superficies planas. Evita glassmorphism, neón,
+gradientes de texto y cuadrículas repetitivas de tarjetas.
 
-No conviene “llenar” el dashboard de tarjetas. Conviene una composición operativa basada en:
+La deuda visible no es estética sino de escala: `SolarPortal.jsx` supera 2,400
+líneas y la barra móvil expone cada módulo en una sola fila desplazable. Los
+diálogos nativos `prompt/confirm` aparecen en decisiones auditables y no ofrecen
+contexto, validación en línea ni recuperación clara.
 
-- bandeja de trabajo priorizada;
-- proyectos por etapa;
-- agenda y vencimientos;
-- expedientes con porcentaje de integridad;
-- bloqueos claros que indiquen qué falta, quién es responsable y cuál es la siguiente acción.
+## Resumen ejecutivo
 
-## Hallazgos críticos
+- 0 bloqueos críticos vigentes en el flujo implementado.
+- 2 hallazgos altos: inventario comprometido/consumido incompleto y perfiles
+  globales limitados a administrador/vendedor.
+- 4 hallazgos medios: navegación móvil, búsqueda global, accesibilidad de foco y
+  tamaño del módulo principal.
+- 3 hallazgos bajos: diálogos nativos, colores de aviso fuera de tokens y falta
+  de una política automatizada de retención.
+- Calidad funcional de fases 1–5: **8.4/10**.
+- Cobertura del objetivo completo: **8.5/10**.
 
-### C1. El ciclo termina cuando comienza la operación
+## Evidencia de requisitos ya logrados
 
-**Ubicación:** `src/components/solar/portal/SolarPortal.jsx`, navegación y vistas `Overview`, `Quotes` y `SolarPortal`.
-
-**Impacto:** una venta aceptada no crea un objeto operativo. El equipo tendría que coordinar instalación, documentación y CFE fuera del sistema, perdiendo trazabilidad, fechas y responsabilidad.
-
-**Recomendación:** crear automáticamente un `solar_project` al aceptar una cotización. El proyecto debe conservar una fotografía inmutable del alcance vendido, precio, impuestos, vendedor, equipos y cliente.
-
-### C2. No existe expediente verificable
-
-**Ubicación:** esquema actual de Supabase; sólo existe almacenamiento del recibo y del PDF de cotización.
-
-**Impacto:** no se puede saber si están listos el diagrama unifilar, fichas técnicas, certificado del inversor, identificación, autorización del representante, evidencia de instalación, solicitud, acuse, contrato ni cambio de medidor.
-
-**Recomendación:** catálogo versionado de requisitos, documentos por proyecto, estados de revisión, vigencia, versiones, responsable y evidencia del evento. Debe separar `regulatorio`, `condicional` e `interno` para evitar afirmar que un documento interno es requisito universal de CFE.
-
-### C3. La comisión se calcula sobre el total con IVA
-
-**Ubicación:** `supabase/migrations/202607310001_solar_sales_portal.sql`, función `set_solar_quote_status`.
-
-**Impacto:** al aceptar la cotización, la función calcula `total_mxn * commission_rate`. La política indicada por CDSE es sobre el presupuesto acordado antes de IVA. Además, no existen aprobación, devengo, pago, ajuste ni reverso.
-
-**Recomendación:** usar un libro de comisiones independiente con base antes de IVA, porcentaje fotografiado, reglas de devengo configurables y bitácora. La cotización puede mostrar una estimación; sólo el registro de comisión debe representar la obligación real.
+| Requisito | Estado | Evidencia autoritativa |
+|---|---|---|
+| Venta crea proyecto operativo | Logrado | `provision_solar_project_for_quote`, `solar_projects` |
+| Snapshot de alcance y precio | Logrado | `sold_scope_snapshot`, importes antes de IVA congelados |
+| Expediente privado y versionado | Logrado | documentos, archivos, RLS, ZIP y manifiesto SHA-256 |
+| Carta de autorización y recursos PDF | Logrado | `project-documents.js` y pruebas de documentos |
+| Levantamiento e ingeniería | Logrado | revisiones estructuradas y puerta DC/AC ≤ 120% |
+| Puerta antes de ingresar a CFE | Logrado | migraciones `008` y `009`, folio obligatorio |
+| Agenda y responsables | Logrado | `solar_project_tasks` y vista Agenda |
+| Órdenes, cuadrillas y seguridad | Logrado | migración `007`, orden móvil, checklist e incidencias |
+| Cambio de medidor e interconexión | Logrado | `solar_cfe_cases`, observaciones y contratos |
+| Comisión 5–10% antes de IVA | Logrado | libro, hitos, aprobación, pago, reverso y recuperación |
+| Costos y margen | Logrado | migraciones `010`/`011`, reporte por periodo y CSV |
+| Postventa y garantías | Logrado | migración `012`, activos, casos, generación y seguimiento |
 
 ## Hallazgos altos
 
-### A1. Permisos insuficientes para operación
+### A1. Material comprometido y consumido no tiene libro propio
 
-Sólo existen `admin` y `seller`. Ingeniería, coordinación, instalador y finanzas necesitan acceso limitado por proyecto y función. Se recomienda membresía por proyecto antes de ampliar el enum global de perfiles.
+**Ubicación:** instalación y finanzas.
 
-### A2. No hay agenda ni compromisos
+**Impacto:** los costos reales pueden capturarse, pero no se sabe qué panel,
+inversor, protección o estructura se reservó, entregó, consumió, devolvió o quedó
+con número de serie en el sitio.
 
-No existen visitas, fechas prometidas, vencimientos, instalación, inspección, seguimiento CFE o recordatorios. Las fechas deben ser entidades con responsable, zona horaria, estado y vínculo al proyecto; no campos sueltos en notas.
+**Recomendación:** reservas y movimientos inmutables por orden; la salida debe
+convertir equipos serializables en activos de postventa.
 
-### A3. Los estados no tienen puertas de calidad
+### A2. El perfil global no representa todas las funciones
 
-El estado puede cambiar sin demostrar que se completaron condiciones previas. Cada transición crítica debe validar un conjunto mínimo: contrato/aceptación, pago, visita, ingeniería, expediente, instalación y puesta en marcha.
+**Ubicación:** `solar_profiles` y administración de usuarios.
 
-### A4. Un componente concentra todo el producto
+**Impacto:** la membresía por proyecto ya admite operaciones, ingeniería,
+instalador, finanzas y consulta, pero el alta de usuarios y la navegación sólo
+modelan administrador/vendedor. No puede delegarse el trabajo sin entregar una
+superficie más amplia de la necesaria.
 
-`SolarPortal.jsx` supera ampliamente la responsabilidad de una vista. Esto eleva el riesgo de regresión, dificulta pruebas y hace costosa la adaptación móvil. Debe dividirse por dominio: `sales`, `projects`, `documents`, `schedule`, `installations`, `commissions`, `admin`.
-
-### A5. No hay trazabilidad de obra ni puesta en marcha
-
-Faltan orden de trabajo, cuadrilla, materiales entregados, evidencia antes/durante/después, pruebas, incidencias, aceptación del cliente, monitoreo y garantías.
+**Recomendación:** separar perfil global de función por proyecto y aplicar
+permisos por acción, manteniendo administración financiera restringida.
 
 ## Hallazgos medios
 
-1. La navegación móvil horizontal pierde contexto al crecer; debe pasar a una barra compacta de áreas principales y menú “Más”.
-2. Falta búsqueda global por cliente, teléfono, folio de cotización, proyecto, número de servicio o folio CFE.
-3. El resumen cuenta oportunidades, pero no muestra trabajo vencido, expedientes bloqueados, instalaciones próximas ni cobros/comisiones pendientes.
-4. Nombre, servicio y domicilio aparecen en recibo, lead y futura obra; se requiere una fuente canónica y snapshots sólo donde haya valor legal/comercial.
-5. El aviso de privacidad se registra en el lead, pero los expedientes incorporarán identificaciones y documentos patrimoniales que necesitan clasificación, retención y acceso más estricto.
-6. No hay métricas de conversión por etapa, tiempo a instalación, tiempo de interconexión, reprocesos, margen o productividad por vendedor/cuadrilla.
+### M1. Navegación móvil pierde contexto
+
+Diez módulos compiten en una barra horizontal. En teléfonos el usuario puede no
+descubrir Postventa o Administración. Debe agruparse en Inicio, Ventas, Proyectos,
+Operación y Más, sin ocultar funciones.
+
+### M2. Falta búsqueda transversal
+
+Cada módulo tiene filtros propios, pero no existe una búsqueda por cliente,
+teléfono, folio de cotización/proyecto/CFE, número de servicio o serie instalada.
+
+### M3. El foco de teclado es inconsistente
+
+Los campos muestran foco, pero botones y enlaces no tienen una regla global
+`:focus-visible`. Varios botones de texto tienen objetivos menores a 44 px fuera
+de móvil. Impacta WCAG 2.4.7/2.4.11 y operación con teclado.
+
+### M4. El módulo principal dificulta mantener calidad
+
+`SolarPortal.jsx` concentra 2,400+ líneas y produce un bundle aproximado de 433
+KB sin comprimir. Instalaciones y CFE ya están separados; Finanzas, Ventas,
+Proyectos y Administración deben seguir la misma estrategia con carga diferida.
 
 ## Hallazgos bajos
 
-1. Unificar “oportunidad”, “cotización” y “propuesta” en microcopy y ayudas.
-2. Añadir estados vacíos orientados a la siguiente acción, no sólo ausencia de datos.
-3. Mostrar por qué un proyecto está bloqueado y qué evidencia lo desbloquea.
-4. Reducir densidad en formularios largos mediante pasos y resumen lateral persistente.
+- `window.prompt/confirm` se usa en 13 decisiones críticas; sustituirlo por
+  formularios contextuales accesibles y con motivo persistente visible.
+- Dos estilos de advertencia usan colores hexadecimales directos; convertirlos a
+  tokens semánticos de advertencia.
+- La clasificación y texto de retención existen, pero falta un proceso de
+  vencimiento/supresión revisable; no debe automatizarse sin política legal aprobada.
 
-## Fortalezas que deben conservarse
+## Patrones sistémicos y fortalezas
 
-- Identidad visual local, sobria y reconocible.
-- Cotización reproducible mediante snapshots.
-- Separación entre catálogo activo y cotizaciones históricas.
-- Propiedad de leads/cotizaciones por vendedor.
-- Registro de eventos de cotización.
-- Procesamiento asistido del recibo con bloqueo cuando la lectura no es confiable.
+Fortalezas a conservar:
 
-## Arquitectura de experiencia recomendada
+- fuentes de verdad históricas mediante snapshots y movimientos compensatorios;
+- RLS por proyecto y almacenamiento privado;
+- puertas que explican evidencia faltante;
+- importes financieros separados antes/con IVA;
+- tolerancia móvil y offline para checklist de campo;
+- identidad visual local, sobria y reconocible.
 
-Navegación principal:
+Patrones a corregir:
 
-1. **Inicio** — mi trabajo, vencidos, citas, bloqueos y métricas accionables.
-2. **Ventas** — leads, recibos, oportunidades y cotizaciones.
-3. **Proyectos** — tablero por etapa y ficha 360°.
-4. **Agenda** — visitas, instalaciones, vencimientos y seguimiento CFE.
-5. **Operación** — órdenes de trabajo, cuadrillas, inventario comprometido e incidencias.
-6. **Finanzas** — anticipos, saldos, comisiones y márgenes; acceso restringido.
-7. **Administración** — catálogo, plantillas, requisitos, zonas, usuarios y reglas.
+- crecimiento monolítico del componente raíz;
+- autorización contextual mediante diálogos del navegador;
+- acciones de texto pequeñas fuera de la clase de botón principal;
+- documentación de auditoría que debe actualizarse con cada fase.
 
-Ficha de proyecto:
+## Prioridad de ejecución
 
-- encabezado con etapa, salud, responsable y próxima acción;
-- línea de tiempo;
-- resumen vendido e ingeniería vigente;
-- expediente y documentos;
-- agenda/tareas;
-- instalación y evidencia;
-- CFE/interconexión;
-- pagos y comisión;
-- actividad/auditoría.
+1. **Inmediato:** inventario comprometido/consumido y series desde la orden.
+2. **Siguiente:** perfiles funcionales, búsqueda global y navegación móvil agrupada.
+3. **Después:** integración opcional con portales de monitoreo.
+4. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
-## Prioridad recomendada
-
-La primera entrega no debe intentar construir todas las pantallas. Debe asegurar el modelo de proyecto, los estados, el expediente, las tareas y la comisión antes de IVA. Esa base permite que calendario, instalación y analítica se construyan sin volver a migrar el núcleo.
+La auditoría no constituye dictamen legal, fiscal, laboral ni eléctrico. La
+validación de formatos CFE locales y política de retención sigue siendo una
+actividad operativa de CDSE, no una condición que el software pueda presumir.

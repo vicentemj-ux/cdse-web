@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { calculatePanelRecommendation } from '../../../lib/solar/calculator.mjs';
 import { parseCfeReceiptText } from '../../../lib/solar/cfe-receipt-parser.mjs';
@@ -20,6 +20,8 @@ import {
   getSupabaseFunctionsUrl,
   hasSupabaseConfig,
 } from '../../../lib/supabase/client.js';
+
+const PostSales = lazy(() => import('./PostSales.jsx'));
 
 const TARIFFS = ['1F', 'DAC', 'PDBT', 'GDBT', 'GDMTO', 'GDMTH', 'OTHER'];
 const STATUS_LABELS = {
@@ -2289,7 +2291,7 @@ export default function SolarPortal() {
     const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
-        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_payment_refunds(*), solar_project_cost_entries(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_payment_refunds(*), solar_project_cost_entries(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*), solar_assets(*), solar_warranties(*), solar_service_cases(*, solar_service_case_events(*)), solar_generation_readings(*), solar_customer_feedback(*)').order('updated_at', { ascending: false }),
         client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_work_orders').select('*, solar_projects(folio,customer_name,status,seller_user_id), solar_crews(name,daily_capacity_panels), solar_work_order_checklist_items(*), solar_work_order_incidents(*)').order('scheduled_start', { ascending: true }),
@@ -2389,6 +2391,7 @@ export default function SolarPortal() {
     ['agenda', 'Agenda'],
     ['installations', 'Instalaciones'],
     ['cfe', 'Seguimiento CFE'],
+    ['post-sales', 'Postventa'],
     ['finance', 'Finanzas'],
     ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
   ];
@@ -2419,6 +2422,7 @@ export default function SolarPortal() {
         {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} />}
+        {view === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
         {view === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}

@@ -12,6 +12,7 @@ Fecha de corte: 8 de agosto de 2026.
 - **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal y acta de entrega PDF.
 - **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
 - **Fase 5 implementada:** reembolsos autorizables, costos presupuestados/reales, margen, reversos y recuperación de comisiones, reporte por periodo/vendedor y CSV auxiliar. En Fase 3 permanecen como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano.
+- **Fase 6 base implementada:** activos y garantías desde la instalación, casos de servicio con objetivos internos, generación real vs propuesta, satisfacción y autorización explícita de referidos.
 
 ## 1. Objetivo
 
@@ -362,12 +363,13 @@ Extensiones posteriores:
 
 ### Fase 6 — postventa y optimización
 
-- activos y garantías;
-- tickets y mantenimientos;
-- monitoreo de generación;
-- comparación prometido/real;
-- NPS/referidos;
-- analítica de conversión, ciclo, retrasos y rentabilidad.
+- [implementado] activos y garantías;
+- [implementado] casos de servicio y mantenimiento;
+- [implementado] lecturas de generación;
+- [implementado] comparación propuesta/real;
+- [implementado] satisfacción y autorización de referidos;
+- [pendiente] integración automática con portales de monitoreo;
+- [pendiente] analítica consolidada de conversión, ciclo, retrasos y rentabilidad.
 
 ## 10. Métricas de dirección
 
