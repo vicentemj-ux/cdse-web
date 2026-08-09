@@ -50,3 +50,49 @@ export function movementLabel(type) {
     reserve: 'Apartado', release: 'Liberación', issue: 'Entrega a proyecto', return: 'Devolución',
   })[type] ?? 'Movimiento';
 }
+
+export function normalizeInventorySerial(input) {
+  return String(input ?? '').normalize('NFKC').trim().replace(/\s+/g, '').toLocaleUpperCase('es-MX');
+}
+
+export function parseInventorySerials(input) {
+  const values = String(input ?? '').split(/[\n,;\t]+/).map(normalizeInventorySerial).filter(Boolean);
+  const seen = new Set();
+  const serials = [];
+  const duplicates = [];
+  const invalid = [];
+  for (const serial of values) {
+    if (!/^[A-Z0-9][A-Z0-9._\/-]{2,179}$/.test(serial)) {
+      invalid.push(serial);
+    } else if (seen.has(serial)) {
+      duplicates.push(serial);
+    } else {
+      seen.add(serial);
+      serials.push(serial);
+    }
+  }
+  return { serials, duplicates: [...new Set(duplicates)], invalid: [...new Set(invalid)] };
+}
+
+export function serialPortfolioMetrics(serials = []) {
+  const count = (status) => serials.filter((item) => item.status === status).length;
+  return {
+    total: serials.length,
+    inStock: count('in_stock'),
+    reserved: count('reserved'),
+    issued: count('issued'),
+    installed: count('installed'),
+    exceptions: serials.filter((item) => ['quarantined', 'retired'].includes(item.status)).length,
+  };
+}
+
+export function eligibleInventorySerials(serials = [], allocation = {}, action = '') {
+  return serials.filter((serial) => {
+    if (serial.item_id !== allocation.item_id) return false;
+    if (action === 'reserve') return serial.status === 'in_stock' && serial.location_id === allocation.location_id;
+    if (action === 'release') return serial.status === 'reserved' && serial.allocation_id === allocation.id;
+    if (action === 'issue') return serial.status === 'reserved' && serial.allocation_id === allocation.id;
+    if (action === 'return') return serial.status === 'issued' && serial.allocation_id === allocation.id;
+    return false;
+  });
+}

@@ -1,4 +1,4 @@
-const TYPE_PRIORITY = { project: 0, quote: 1, cfe: 2, asset: 3, lead: 4, receipt: 5 };
+const TYPE_PRIORITY = { project: 0, quote: 1, cfe: 2, asset: 3, serial: 3, lead: 4, receipt: 5 };
 
 export function normalizePortalSearch(value) {
   return String(value ?? '')
@@ -40,6 +40,15 @@ export function buildPortalSearchIndex(data = {}) {
       municipality: quote.solar_leads?.municipality,
       service: quote.service_number ?? quote.solar_receipts?.service_number,
     }));
+  }
+  for (const serial of data.inventorySerials ?? []) {
+    rows.push(entry('serial', serial.id, 'inventory', serial.serial_number, serial.solar_inventory_items?.name ?? 'Equipo serializado', {
+      sku: serial.solar_inventory_items?.sku,
+      project: serial.solar_projects?.folio,
+      customer: serial.solar_projects?.customer_name,
+      status: serial.status,
+      workOrder: serial.solar_work_orders?.folio,
+    }, serial.project_id));
   }
   for (const cfeCase of data.cfeCases ?? []) {
     rows.push(entry('cfe', cfeCase.id, 'cfe', cfeCase.tracking_folio || 'Trámite CFE sin folio', cfeCase.solar_projects?.customer_name ?? 'Proyecto CFE', {

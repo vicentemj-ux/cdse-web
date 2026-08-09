@@ -829,6 +829,59 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .sp-inventory-movements dl { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 0; }
 .sp-inventory-movements dt { color: var(--sp-muted); font-size: .52rem; }
 .sp-inventory-movements dd { margin: .2rem 0 0; font-size: .62rem; font-weight: 750; white-space: nowrap; }
+.sp-check-row { display: flex; gap: .75rem; align-items: start; margin-top: 1rem; cursor: pointer; }
+.sp-check-row input { width: 1.1rem; height: 1.1rem; margin-top: .15rem; accent-color: var(--sp-blue); }
+.sp-check-row span, .sp-check-row strong, .sp-check-row small { display: block; min-width: 0; }
+.sp-check-row strong { font-size: .72rem; }
+.sp-check-row small { margin-top: .25rem; color: var(--sp-muted); font-size: .6rem; line-height: 1.4; }
+.sp-serial-picker { grid-column: 1 / -1; min-width: 0; max-height: 16rem; overflow: auto; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1px; margin: 0; border: 1px solid var(--sp-line); padding: .35rem; background: var(--sp-line); }
+.sp-serial-picker legend { float: left; width: 100%; margin-bottom: .45rem; color: var(--sp-muted); font-size: .58rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.sp-serial-picker label { min-width: 0; min-height: 3.35rem; display: flex; gap: .55rem; align-items: center; padding: .55rem; background: var(--sp-paper); cursor: pointer; }
+.sp-serial-picker input { flex: 0 0 auto; width: 1rem; height: 1rem; accent-color: var(--sp-blue); }
+.sp-serial-picker span, .sp-serial-picker b, .sp-serial-picker small { display: block; min-width: 0; overflow-wrap: anywhere; }
+.sp-serial-picker b { font-size: .65rem; }
+.sp-serial-picker small { margin-top: .2rem; color: var(--sp-muted); font-size: .55rem; }
+.sp-serials-view { margin-top: 2.5rem; }
+.sp-serials-view > .sp-subhead { align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1rem; }
+.sp-serials-view > .sp-subhead h2 { margin: .25rem 0 0; font-family: "Newsreader",serif; font-size: clamp(2rem,4vw,3.2rem); }
+.sp-serials-view > .sp-subhead p:not(.sp-section-number) { max-width: 45rem; margin: .45rem 0 0; color: var(--sp-muted); font-size: .68rem; line-height: 1.5; }
+.sp-serials-view > .sp-subhead .sp-field { min-width: min(22rem,100%); }
+.sp-serial-ledger { display: grid; grid-template-columns: repeat(6,1fr); border-bottom: 1px solid var(--sp-ink); }
+.sp-serial-ledger > div { min-width: 0; border-left: 1px solid var(--sp-line); padding: 1rem; }
+.sp-serial-ledger > div:first-child { border-left: 0; }
+.sp-serial-ledger span, .sp-serial-ledger strong { display: block; }
+.sp-serial-ledger span { color: var(--sp-muted); font-size: .56rem; }
+.sp-serial-ledger strong { margin-top: .35rem; font-family: "Newsreader",serif; font-size: 1.8rem; }
+.sp-serial-ledger .is-alert strong { color: var(--sp-danger); }
+.sp-serial-filter { display: flex; gap: .4rem; overflow-x: auto; padding: 1rem 0; scrollbar-width: thin; }
+.sp-serial-filter button { min-height: 2.75rem; flex: 0 0 auto; border: 1px solid var(--sp-line); padding: .55rem .8rem; background: transparent; color: var(--sp-muted); font-size: .6rem; font-weight: 800; cursor: pointer; }
+.sp-serial-filter button.is-active { border-color: var(--sp-navy); background: var(--sp-navy); color: var(--sp-paper); }
+.sp-serial-install { display: grid; grid-template-columns: minmax(14rem,1fr) repeat(2,minmax(9rem,.55fr)); gap: 1rem; align-items: end; margin: 1rem 0 2.5rem; border-block: 1px solid var(--sp-ink); padding: 1.2rem 0; }
+.sp-serial-install > div:first-child { grid-row: span 2; }
+.sp-serial-install h3 { margin: .25rem 0; font-family: "Newsreader",serif; font-size: 1.65rem; }
+.sp-serial-install p:not(.sp-section-number) { max-width: 28rem; margin: 0; color: var(--sp-muted); font-size: .62rem; line-height: 1.5; }
+.sp-serial-install .sp-serial-picker { grid-column: 2 / -1; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.sp-serial-install .sp-field--wide { grid-column: 2 / -1; }
+.sp-serial-list > article { border-top: 1px solid var(--sp-line); padding: 1.15rem 0; }
+.sp-serial-list > article.is-issued { box-shadow: inset 3px 0 var(--sp-sun); padding-left: .85rem; }
+.sp-serial-list > article.is-installed { box-shadow: inset 3px 0 var(--sp-success); padding-left: .85rem; }
+.sp-serial-code { display: grid; grid-template-columns: 7rem minmax(10rem,.55fr) minmax(14rem,1fr); gap: 1rem; align-items: baseline; }
+.sp-serial-code span { color: var(--sp-blue); font-size: .56rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.sp-serial-code strong { overflow-wrap: anywhere; font-size: .8rem; }
+.sp-serial-code small { overflow-wrap: anywhere; color: var(--sp-muted); font-size: .62rem; }
+.sp-serial-route { display: grid; grid-template-columns: minmax(9rem,.8fr) auto minmax(12rem,1.2fr) auto minmax(12rem,1fr); gap: .7rem; align-items: center; margin-top: .9rem; padding: .75rem; background: color-mix(in oklch,var(--sp-blue) 5%,var(--sp-paper)); }
+.sp-serial-route span { min-width: 0; overflow-wrap: anywhere; color: var(--sp-muted); font-size: .6rem; }
+.sp-serial-route b { color: var(--sp-sun); }
+.sp-serial-list footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: .7rem; color: var(--sp-muted); font-size: .55rem; }
+.sp-installed-serials { margin-top: 2rem; border-block: 1px solid var(--sp-ink); padding: 1.2rem 0; }
+.sp-installed-serials > header { display: flex; justify-content: space-between; gap: 1rem; align-items: end; }
+.sp-installed-serials h4 { margin: .2rem 0 0; font-family: "Newsreader",serif; font-size: 1.7rem; }
+.sp-installed-serials > header > strong { color: var(--sp-success); font-size: .65rem; }
+.sp-installed-serials > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 1.5rem; margin-top: .8rem; }
+.sp-installed-serials article { display: grid; grid-template-columns: 6rem minmax(0,1fr); gap: .3rem .8rem; border-top: 1px solid var(--sp-line); padding: .8rem 0; }
+.sp-installed-serials article span { color: var(--sp-blue); font-size: .55rem; font-weight: 800; text-transform: uppercase; }
+.sp-installed-serials article strong { overflow-wrap: anywhere; font-size: .7rem; }
+.sp-installed-serials article small { grid-column: 2; color: var(--sp-muted); font-size: .56rem; }
 
 /* CFE casework: a precise docket, not another dashboard of cards. */
 .sp-cfe-shell { display: grid; grid-template-columns: minmax(17rem, 25rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; align-items: start; }
@@ -952,6 +1005,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-stock-list article > b { grid-column: 1 / -1; }
   .sp-inventory-movements > div > article { grid-template-columns: 7rem minmax(0, 1fr) auto; }
   .sp-inventory-movements article dl { grid-column: 2 / -1; }
+  .sp-serial-ledger { grid-template-columns: repeat(3,1fr); }
+  .sp-serial-ledger > div:nth-child(4) { border-top: 1px solid var(--sp-line); border-left: 0; }
+  .sp-serial-ledger > div:nth-child(5), .sp-serial-ledger > div:nth-child(6) { border-top: 1px solid var(--sp-line); }
+  .sp-serial-install { grid-template-columns: 1fr 1fr; }
+  .sp-serial-install > div:first-child { grid-column: 1 / -1; grid-row: auto; }
+  .sp-serial-install .sp-serial-picker, .sp-serial-install .sp-field--wide { grid-column: 1 / -1; }
   .sp-agenda-row { grid-template-columns: 7rem minmax(0, 1fr); }
   .sp-agenda-actions { grid-column: 2; }
   .sp-project-facts { grid-template-columns: repeat(2, 1fr); }
@@ -1082,8 +1141,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-inventory-action, .sp-inventory-plan { grid-template-columns: 1fr; padding-inline: .85rem; }
   .sp-inventory-action .sp-field--wide, .sp-inventory-plan .sp-field--wide, .sp-inventory-action > div, .sp-inventory-plan > div { grid-column: auto; }
   .sp-material-actions button { min-height: 3rem; flex: 1 1 7rem; }
-  .sp-inventory-stock > .sp-subhead, .sp-inventory-movements > .sp-subhead { align-items: start; flex-direction: column; }
-  .sp-inventory-stock > .sp-subhead .sp-field { width: 100%; min-width: 0; }
+  .sp-inventory-stock > .sp-subhead, .sp-inventory-movements > .sp-subhead, .sp-serials-view > .sp-subhead { align-items: start; flex-direction: column; }
+  .sp-inventory-stock > .sp-subhead .sp-field, .sp-serials-view > .sp-subhead .sp-field { width: 100%; min-width: 0; }
   .sp-stock-list > article { grid-template-columns: 1fr; gap: .8rem; }
   .sp-stock-list dl { grid-template-columns: repeat(3, 1fr); }
   .sp-stock-list article > b { grid-column: auto; }
@@ -1091,6 +1150,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-inventory-movements > div > article { grid-template-columns: 1fr auto; gap: .65rem; }
   .sp-inventory-movements time { grid-column: 1 / -1; }
   .sp-inventory-movements article dl { grid-column: 1 / -1; }
+  .sp-serial-picker { grid-template-columns: 1fr; max-height: 18rem; }
+  .sp-serial-ledger { grid-template-columns: 1fr 1fr; }
+  .sp-serial-ledger > div:nth-child(odd) { border-left: 0; }
+  .sp-serial-ledger > div:nth-child(n+3) { border-top: 1px solid var(--sp-line); }
+  .sp-serial-install { grid-template-columns: 1fr; }
+  .sp-serial-install .sp-serial-picker, .sp-serial-install .sp-field--wide { grid-column: auto; }
+  .sp-serial-code { grid-template-columns: 1fr; gap: .3rem; }
+  .sp-serial-route { grid-template-columns: 1fr; gap: .35rem; }
+  .sp-serial-route b { transform: rotate(90deg); transform-origin: left center; }
+  .sp-serial-list footer { align-items: start; flex-direction: column; }
+  .sp-installed-serials > div { grid-template-columns: 1fr; }
+  .sp-installed-serials article { grid-template-columns: 5.5rem minmax(0,1fr); }
   .sp-field-signal { align-items: flex-start; flex-direction: column; margin-top: -1rem; }
   .sp-install-tabs { position: sticky; z-index: 6; top: 0; overflow-x: auto; background: var(--sp-paper); }
   .sp-install-tabs button { flex: 1 0 auto; min-height: 3.2rem; }

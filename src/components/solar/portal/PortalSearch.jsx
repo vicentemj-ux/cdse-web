@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { buildPortalSearchIndex, searchPortalIndex } from '../../../lib/solar/portal-search.mjs';
 
-const TYPE_LABEL = { project: 'Proyecto', quote: 'Cotización', cfe: 'CFE', asset: 'Equipo instalado', lead: 'Lead', receipt: 'Recibo' };
+const TYPE_LABEL = { project: 'Proyecto', quote: 'Cotización', cfe: 'CFE', asset: 'Equipo instalado', serial: 'Serie de inventario', lead: 'Lead', receipt: 'Recibo' };
 
 export default function PortalSearch({ data, navigation, open, setOpen, onNavigate }) {
   const [query, setQuery] = useState('');

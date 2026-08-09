@@ -1,6 +1,6 @@
 # CDSE Solar — inventario y materiales por proyecto
 
-Fecha de implementación: 8 de agosto de 2026. Migraciones: `202608080013` y endurecimiento `202608080014`.
+Fecha de implementación: 8–9 de agosto de 2026. Migraciones: `202608080013`, endurecimiento `202608080014` y serialización `202608090001`.
 
 ## Propósito
 
@@ -11,6 +11,22 @@ Este módulo separa tres cantidades que no deben confundirse:
 - **Disponible:** físico menos apartado; es lo único que puede prometerse a otro proyecto.
 
 El costo de proyecto y el inventario son fuentes distintas. Finanzas registra el costo presupuestado o incurrido; Inventario demuestra qué material entró, se comprometió, se entregó y volvió.
+
+Paneles e inversores usan además identidad unitaria. Cada serie conserva su estado actual y una bitácora inmutable desde la factura o remisión hasta el activo instalado.
+
+## Cadena de custodia por serie
+
+Los estados permitidos son:
+
+1. **En almacén:** recibida con factura/remisión o conciliada contra existencia física anterior.
+2. **Apartada:** comprometida para una partida y proyecto concretos.
+3. **En obra:** salió del almacén mediante una entrega y, cuando existe, una orden de trabajo.
+4. **Instalada:** fue confirmada físicamente y quedó vinculada al activo de Postventa.
+5. **En revisión o retirada:** estados de excepción reservados para aislamiento y baja controlada.
+
+El servidor valida que una serie no se repita globalmente, pertenezca al SKU y ubicación correctos, respete la transición esperada y no pueda asignarse a dos proyectos. Los movimientos serializados actualizan en una sola transacción el saldo agregado, la partida, el libro mayor, el estado de la unidad y la bitácora del proyecto.
+
+Para existencia comprada antes de esta función se utiliza **Identificar existencia anterior**. Esta operación no incrementa el saldo: sólo permite registrar series hasta el máximo físico disponible todavía no identificado.
 
 ## Flujo operativo
 
@@ -85,13 +101,14 @@ Semanalmente:
 2. resolver proyectos con partidas sin cubrir antes de confirmar fecha de instalación;
 3. comparar vales físicos contra entregas del libro mayor;
 4. registrar devoluciones y ajustes con explicación;
-5. comparar equipos entregados contra números de serie en Postventa al cerrar la instalación.
+5. resolver cualquier equipo **En obra** que todavía no haya sido confirmado como instalado;
+6. comparar factura/remisión, libro mayor, series y activos de Postventa.
 
 Mensualmente, administración debe hacer conteo físico por ubicación. Las diferencias se registran como `Ajuste de entrada` o `Ajuste de salida`; nunca se cambia el saldo directamente.
 
 ## Límites actuales
 
 - El costo mostrado usa el costo unitario de catálogo y es auxiliar operativo, no póliza contable.
-- Los números de serie se documentan en los activos instalados de Postventa; aún no existe serialización unitaria desde almacén.
 - No se generan órdenes de compra ni transferencias entre almacenes en esta fase.
 - Los consumibles no se infieren: deben catalogarse y planearse según ingeniería real.
+- La cuarentena, sustitución por garantía y retiro conservan estados reservados en el modelo; su interfaz operativa se incorporará junto con el flujo de RMA/proveedor.

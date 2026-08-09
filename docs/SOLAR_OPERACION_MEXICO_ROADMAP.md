@@ -9,7 +9,7 @@ Fecha de corte: 9 de agosto de 2026.
 - **Puerta técnica desplegada:** el sistema exige visita aprobada, ingeniería aprobada y documentos base completos antes de permitir el estado `ready_for_submission`; para `submitted_to_cfe` exige además folio de seguimiento.
 - **Recursos desplegados:** reporte de levantamiento, carta de autorización condicional, índice documental y ZIP privado con archivos, versiones, manifiesto y huellas SHA-256. La generación y las aperturas quedan auditadas.
 - **Módulo financiero base desplegado:** calendario automático de cobros, captura y conciliación de pagos, comisión sobre base antes de IVA, dos hitos de devengo, autorización y liquidación con bitácora. Se adelantó este núcleo de la Fase 5 por prioridad comercial.
-- **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal, acta de entrega PDF e inventario físico/apartado/entregado por proyecto.
+- **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal, acta de entrega PDF, inventario físico/apartado/entregado y cadena de custodia por serie hasta Postventa.
 - **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
 - **Fase 5 implementada:** reembolsos autorizables, costos presupuestados/reales, margen, reversos y recuperación de comisiones, reporte por periodo/vendedor y CSV auxiliar. Como mejora posterior de campo permanece la carga fotográfica reanudable en segundo plano.
 - **Fase 6 base implementada:** activos y garantías desde la instalación, casos de servicio con objetivos internos, generación real vs propuesta, satisfacción y autorización explícita de referidos.
@@ -291,7 +291,8 @@ Extensiones posteriores:
 - `solar_site_surveys` y evidencias;
 - `solar_design_revisions`;
 - `solar_inventory_reservations` y consumo;
-- `solar_warranties`, `solar_assets` y números de serie;
+- `solar_inventory_serials` y `solar_inventory_serial_events`: identidad unitaria y eventos inmutables;
+- `solar_warranties`, `solar_assets` y vínculo con números de serie instalados;
 - `solar_service_cases` y generación monitoreada.
 
 ## 9. Roadmap ordenado

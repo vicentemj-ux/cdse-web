@@ -8,6 +8,7 @@ const data = {
   quotes: [{ id: 'q1', folio: 'CDSE-S-000033', solar_leads: { name: 'José Núñez', phone_e164: '+526681234567' } }],
   cfeCases: [{ id: 'c1', project_id: 'p1', tracking_folio: 'CFE-AHO-8891', solar_projects: { folio: 'CDSE-P-000021', customer_name: 'José Núñez' }, bidirectional_meter_serial: 'BD-7744' }],
   leads: [{ id: 'l1', name: 'María López', phone_e164: '+526689998877', municipality: 'Ahome' }],
+  inventorySerials: [{ id: 's1', serial_number: 'MOD-CDSE-001', status: 'reserved', project_id: 'p1', solar_inventory_items: { sku: 'CS-550', name: 'Canadian Solar 550 W' }, solar_projects: { folio: 'CDSE-P-000021', customer_name: 'José Núñez' } }],
 };
 
 test('normaliza acentos, símbolos y mayúsculas para búsqueda tolerante', () => {
@@ -32,3 +33,9 @@ test('no muestra resultados con consultas accidentales de un carácter', () => {
   assert.deepEqual(searchPortalIndex(buildPortalSearchIndex(data), 'c'), []);
 });
 
+test('encuentra una serie todavía administrada por almacén', () => {
+  const result = searchPortalIndex(buildPortalSearchIndex(data), 'MOD-CDSE-001')[0];
+  assert.equal(result.type, 'serial');
+  assert.equal(result.view, 'inventory');
+  assert.equal(result.projectId, 'p1');
+});

@@ -1,7 +1,7 @@
 # Auditoría vigente del portal CDSE Solar — agosto de 2026
 
 Fecha de revisión: 9 de agosto de 2026. Evidencia: esquema remoto hasta la
-migración `202608080015`, componentes publicados, 35 pruebas automatizadas,
+migración `202608090001`, componentes publicados, 39 pruebas automatizadas,
 compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
@@ -25,7 +25,7 @@ contexto, validación en línea ni recuperación clara.
 - 3 hallazgos bajos: diálogos nativos, colores de aviso fuera de tokens y falta
   de una política automatizada de retención.
 - Calidad funcional de fases 1–6: **9.0/10**.
-- Cobertura del objetivo completo: **9.5/10**.
+- Cobertura del objetivo completo: **9.7/10**.
 
 ## Evidencia de requisitos ya logrados
 
@@ -46,6 +46,7 @@ contexto, validación en línea ni recuperación clara.
 | Inventario comprometido y consumido | Logrado | migración `013`, saldos, partidas, RPC transaccionales y libro mayor |
 | Funciones y pertenencia por proyecto | Logrado | migración `015`, guardas por acción y Equipo y accesos |
 | Búsqueda transversal | Logrado | índice autorizado por RLS y acceso por cliente, teléfono, folio, servicio, CFE o serie |
+| Cadena de custodia por serie | Logrado | recepción/conciliación, apartado, salida, instalación, activo y eventos inmutables |
 | Navegación móvil agrupada | Logrado | Inicio, Ventas, Proyectos, Operación y Más según función |
 
 ## Hallazgos medios
@@ -85,7 +86,7 @@ Patrones a corregir:
 
 ## Prioridad de ejecución
 
-1. **Siguiente:** serialización desde almacén hasta activo instalado.
+1. **Siguiente:** cuarentena, devolución a proveedor, reemplazo y RMA de garantía.
 2. **Después:** integración opcional con portales de monitoreo.
 3. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
