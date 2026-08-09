@@ -11,10 +11,18 @@ export function calculateInverterSizing(inverter, systemDcKw, maxDcAcRatio = 1.2
 }
 
 export function selectSuggestedInverter(inverters, systemDcKw, maxDcAcRatio = 1.2) {
-  const active = (inverters ?? [])
+  const dcKw = Number(systemDcKw);
+  if (!(dcKw > 0)) return null;
+
+  const candidates = (inverters ?? [])
     .filter((item) => item.active)
-    .sort((a, b) => Number(a.ac_capacity_kw) - Number(b.ac_capacity_kw));
-  if (!active.length || !(Number(systemDcKw) > 0)) return null;
-  return active.find((item) => Number(systemDcKw) <= Number(item.ac_capacity_kw) * maxDcAcRatio)
-    ?? active.at(-1);
+    .map((item) => ({ item, sizing: calculateInverterSizing(item, dcKw, maxDcAcRatio) }))
+    .filter(({ sizing }) => sizing && sizing.loadingPercent <= maxDcAcRatio * 100 + 0.01)
+    .sort((a, b) => (
+      a.sizing.quantity - b.sizing.quantity
+      || a.sizing.combinedAcKw - b.sizing.combinedAcKw
+      || Number(b.item.ac_capacity_kw) - Number(a.item.ac_capacity_kw)
+    ));
+
+  return candidates[0]?.item ?? null;
 }

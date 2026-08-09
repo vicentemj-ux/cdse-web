@@ -510,6 +510,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
     financingOptionId: '',
     coverageTarget: '1',
   });
+  const [inverterSelectionMode, setInverterSelectionMode] = useState('auto');
 
   const availablePrices = data.prices.filter((price) => price.module_id === form.moduleId && price.active);
   const availablePromotions = data.promotions.filter(
@@ -561,10 +562,13 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
   const selectedInverterSizing = calculateInverterSizing(selectedInverter, preview?.systemDcKw);
 
   useEffect(() => {
-    if (!preview?.systemDcKw || (selectedInverter && selectedInverter.active)) return;
+    if (!preview?.systemDcKw) return;
+    if (inverterSelectionMode === 'manual' && selectedInverter?.active) return;
     const suggestion = selectSuggestedInverter(data.inverters, preview.systemDcKw);
-    if (suggestion) setForm((current) => ({ ...current, inverterId: suggestion.id }));
-  }, [preview?.systemDcKw, selectedInverter?.id, selectedInverter?.active, data.inverters]);
+    if (suggestion && suggestion.id !== form.inverterId) {
+      setForm((current) => ({ ...current, inverterId: suggestion.id }));
+    }
+  }, [preview?.systemDcKw, selectedInverter?.active, data.inverters, form.inverterId, inverterSelectionMode]);
 
   useEffect(() => {
     if (!preview) return;
@@ -582,6 +586,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
 
   function updateForm(event) {
     const { name, value } = event.target;
+    if (name === 'inverterId') setInverterSelectionMode('manual');
     setForm((current) => ({
       ...current,
       [name]: value,
@@ -854,7 +859,7 @@ function QuoteForm({ data, session, onCreated, onOpenQuote }) {
               <label className="sp-field"><span>Promoción</span><select name="promotionId" value={form.promotionId} onChange={updateForm}><option value="">Sin promoción</option>{availablePromotions.map((promotion) => <option value={promotion.id} key={promotion.id}>{promotion.name}</option>)}</select></label>
               <label className="sp-field"><span>Paquete sugerido</span><select name="packageId" value={form.packageId} onChange={updateForm}><option value="">Precio por panel</option>{availablePackages.map((item) => <option value={item.id} key={item.id}>{item.name} · {money.format(item.price_mxn)}</option>)}</select></label>
               {data.financingOptions.some((item) => Number(item.min_panels) <= Math.max(preview?.panelCount ?? 0, Number(selectedPackage?.panel_count ?? 0))) && <label className="sp-field"><span>Financiamiento</span><select name="financingOptionId" value={form.financingOptionId} onChange={updateForm}><option value="">Sin financiamiento</option>{data.financingOptions.filter((item) => item.active && Number(item.min_panels) <= Math.max(preview?.panelCount ?? 0, Number(selectedPackage?.panel_count ?? 0))).map((item) => <option value={item.id} key={item.id}>{item.name} · enganche {number.format(item.down_payment_percent)}%</option>)}</select></label>}
-              <label className="sp-field"><span>Inversor recomendado</span><select name="inverterId" value={form.inverterId} onChange={updateForm}><option value="">Selecciona un inversor</option>{data.inverters.filter((item) => item.active).map((item) => <option value={item.id} key={item.id}>{item.brand} {item.model} · {number.format(item.ac_capacity_kw)} kW AC</option>)}</select></label>
+              <label className="sp-field"><span>Inversor recomendado</span><select name="inverterId" value={form.inverterId} onChange={updateForm}><option value="">Selecciona un inversor</option>{data.inverters.filter((item) => item.active).map((item) => <option value={item.id} key={item.id}>{item.brand} {item.model} · {number.format(item.ac_capacity_kw)} kW AC</option>)}</select><small>{inverterSelectionMode === 'auto' ? 'Selección automática: menor cantidad de equipos y potencia AC adecuada, sin superar 120% DC/AC.' : 'Ajuste manual del vendedor. La cantidad y la relación DC/AC se recalculan antes de guardar.'}</small>{inverterSelectionMode === 'manual' && <button type="button" className="sp-text-button" onClick={() => setInverterSelectionMode('auto')}>Restablecer recomendación automática</button>}</label>
               <label className="sp-field"><span>Cobertura objetivo</span><select name="coverageTarget" value={form.coverageTarget} onChange={updateForm}><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option></select></label>
               <label className="sp-field"><span>Tipo de techo</span><select name="roofType" value={form.roofType} onChange={updateForm}><option value="unknown">Por confirmar</option><option value="concrete">Losa</option><option value="metal">Lámina</option><option value="tile">Teja</option><option value="ground">Suelo</option></select></label>
             </div>
@@ -2183,9 +2188,10 @@ function Catalog({ data, refresh }) {
         <button className={tab === 'financing' ? 'is-active' : ''} onClick={() => setTab('financing')}>Financiamiento</button>
       </div>
       {message && <p className="sp-inline-notice">{message}</p>}
+      {tab === 'inverters' && <p className="sp-inline-notice"><strong>Dimensionamiento comercial:</strong> el cotizador recomienda el modelo activo que resuelve el arreglo con menos equipos y menor capacidad excedente, manteniendo la relación DC/AC en 120% o menos. El vendedor puede sustituirlo antes de emitir; ingeniería valida voltaje, corriente y strings.</p>}
       <div className="sp-admin-grid">
         <div className="sp-catalog-list">
-          {tab === 'inverters' && data.inverters.map((item) => <div className="sp-catalog-row" key={item.id}><div><strong>{item.brand} {item.model}</strong><span>{item.sku} · {item.phases} fase · {item.active ? 'Activo' : 'Desactivado'}</span></div><b>{number.format(item.ac_capacity_kw)} kW AC</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_inverters', item.id, !item.active)}>{item.active ? 'Desactivar' : 'Activar'}</button></div>)}
+          {tab === 'inverters' && data.inverters.map((item) => <div className="sp-catalog-row" key={item.id}><div><strong>{item.brand} {item.model}</strong><span>{item.sku} · {item.phases} fase · política DC/AC 120% · {item.active ? 'Activo' : 'Desactivado'}</span></div><b>{number.format(item.ac_capacity_kw)} kW AC</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_inverters', item.id, !item.active)}>{item.active ? 'Dar de baja' : 'Dar de alta'}</button></div>)}
           {tab === 'inverters' && <form className="sp-admin-form" onSubmit={addInverter}><h2>Agregar inversor</h2><label className="sp-field"><span>SKU</span><input value={inverterForm.sku} onChange={(e) => setInverterForm({ ...inverterForm, sku: e.target.value })} required /></label><label className="sp-field"><span>Marca</span><input value={inverterForm.brand} onChange={(e) => setInverterForm({ ...inverterForm, brand: e.target.value })} required /></label><label className="sp-field"><span>Modelo</span><input value={inverterForm.model} onChange={(e) => setInverterForm({ ...inverterForm, model: e.target.value })} required /></label><label className="sp-field"><span>Capacidad nominal AC</span><input type="number" min="0.1" step="0.1" value={inverterForm.capacityKw} onChange={(e) => setInverterForm({ ...inverterForm, capacityKw: e.target.value })} required /></label><label className="sp-field"><span>Fases</span><select value={inverterForm.phases} onChange={(e) => setInverterForm({ ...inverterForm, phases: e.target.value })}><option value="1">1 fase</option><option value="2">2 fases</option><option value="3">3 fases</option></select></label><label className="sp-field"><span>Garantía</span><input type="number" min="0" step="0.5" value={inverterForm.warrantyYears} onChange={(e) => setInverterForm({ ...inverterForm, warrantyYears: e.target.value })} /></label><button className="sp-button sp-button--primary">Guardar inversor</button></form>}
           {tab === 'panels' && data.modules.map((module) => <div className="sp-catalog-row" key={module.id}><div><strong>{module.brand} {module.model}</strong><span>{module.sku} · {module.active ? 'Activo' : 'Desactivado'}</span></div><b>{module.watts} W</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_modules', module.id, !module.active)}>{module.active ? 'Desactivar' : 'Activar'}</button></div>)}
           {tab === 'prices' && data.prices.map((price) => <div className="sp-catalog-row" key={price.id}><div><strong>{price.name}</strong><span>{data.moduleMap[price.module_id]?.brand} {data.moduleMap[price.module_id]?.model} · {price.active ? 'Activo' : 'Desactivado'}</span></div><b>{money.format(price.price_per_panel_mxn)}</b><button type="button" className="sp-text-button" onClick={() => toggleActive('solar_price_options', price.id, !price.active)}>{price.active ? 'Desactivar' : 'Activar'}</button></div>)}

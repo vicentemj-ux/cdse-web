@@ -11,6 +11,8 @@ const quote = {
   folio: 'CDSE-S-000002',
   created_at: '2026-07-31T12:00:00.000Z',
   panel_count: 8,
+  inverter_quantity: 1,
+  inverter_loading_percent: 104.76,
   total_mxn: 72000,
   solar_leads: {
     name: 'Ruiz Rojas Raul Ivan',
@@ -19,12 +21,14 @@ const quote = {
     municipality: 'Los Mochis',
   },
   solar_modules: { brand: 'Panel solar', model: 'Monofacial', watts: 550 },
+  solar_inverters: { brand: 'GROWATT', model: 'MIN 4200TL-X', ac_capacity_kw: 4.2, phases: 1, warranty_years: 10 },
   input_snapshot: { annualConsumptionKwh: 6840, tariffCode: '1F' },
   result_snapshot: {
     panelCount: 8,
     systemDcKw: 4.4,
     annualGenerationKwh: 7066.4,
     estimatedCoverage: 1.033,
+    inverter: { brand: 'GROWATT', model: 'MIN 4200TL-X', acCapacityKw: 4.2, quantity: 1, loadingPercent: 104.76 },
     package: { name: 'Paquete base 8 paneles - 550 W', panelCount: 8, priceMxn: 72000 },
     financing: { name: 'Credito 12 meses sin intereses', downPaymentMxn: 36000, installments: 12 },
   },
