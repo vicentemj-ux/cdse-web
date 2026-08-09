@@ -157,6 +157,7 @@ function projectFolio(project) {
 
 function projectAddress(project) {
   const address = project?.site_address ?? {};
+  if (typeof address === 'string') return clean(address, 'Domicilio del servicio por confirmar');
   return clean([
     address.street ?? address.address,
     address.colony,
@@ -462,6 +463,66 @@ export async function createDossierIndexPdf(project, providedAssets = {}) {
   return doc;
 }
 
+export async function createHandoverCertificatePdf(project, workOrder, providedAssets = {}) {
+  const [{ jsPDF }, assets] = await Promise.all([import('jspdf'), loadAssets(providedAssets)]);
+  if (!workOrder) throw new Error('WORK_ORDER_REQUIRED');
+  const items = [...(workOrder.solar_work_order_checklist_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+  const engineering = approved(project.solar_engineering_revisions) ?? latest(project.solar_engineering_revisions);
+  const results = project.sold_scope_snapshot?.results ?? {};
+  const inverter = project.sold_scope_snapshot?.configuration?.inverter ?? results.inverter ?? {};
+  const doc = newPdf(jsPDF, `${projectFolio(project)} - Acta de entrega`, 'Entrega, puesta en marcha y aceptación del sistema fotovoltaico');
+
+  addDocumentChrome(doc, assets, project, 1, 2, 'Entrega y puesta en marcha');
+  drawTitle(doc, 'ACTA DE ENTREGA', 'Sistema instalado y explicado.', 'Constancia operativa para revisión, firma del cliente y resguardo en el expediente privado.');
+  drawMetaStrip(doc, project, 76);
+  drawBox(doc, 14, 108, 182, 24, COLORS.navy, 2);
+  drawText(doc, 'ORDEN DE TRABAJO', 20, 117, { size: 6, weight: 'bold', tone: COLORS.amber });
+  drawText(doc, workOrder.folio, 20, 126, { size: 12, weight: 'bold', tone: COLORS.white });
+  drawText(doc, 'FECHA DE TERMINACIÓN', 92, 117, { size: 6, weight: 'bold', tone: '#bfd0dd' });
+  drawText(doc, dateTime(workOrder.completed_at ?? workOrder.scheduled_end), 92, 126, { size: 8, weight: 'bold', tone: COLORS.white, maxWidth: 94 });
+
+  drawText(doc, 'ALCANCE ENTREGADO', 14, 148, { size: 8, weight: 'bold', tone: COLORS.navy });
+  drawLine(doc, 14, 152, 196, 152, COLORS.amber, .6);
+  const systemRows = [
+    ['PANELES', `${workOrder.planned_panels ?? results.panelCount ?? '-'} módulos`, 'POTENCIA DC', engineering?.system_dc_kw ? `${engineering.system_dc_kw} kW` : `${results.systemDcKw ?? '-'} kW`],
+    ['INVERSOR', `${inverter.brand ?? ''} ${inverter.model ?? engineering?.inverter_model ?? ''}`, 'POTENCIA AC', engineering?.system_ac_kw ? `${engineering.system_ac_kw} kW` : `${inverter.acCapacityKw ?? '-'} kW`],
+    ['MONITOREO', items.find((item) => item.item_code === 'monitoring_online')?.status === 'complete' ? 'Configurado' : 'No confirmado', 'DOMICILIO', projectAddress(project)],
+    ['INGENIERÍA', engineering ? `Revisión ${engineering.version} / ${STATUS_LABELS[engineering.status] ?? engineering.status}` : 'Por confirmar', 'ORDEN', workOrder.folio],
+  ];
+  systemRows.forEach((row, index) => drawFieldRow(doc, 157 + index * 12, ...row));
+
+  drawText(doc, 'DECLARACIÓN DE ENTREGA', 14, 216, { size: 8, weight: 'bold', tone: COLORS.navy });
+  drawText(doc, 'CDSE informa la terminación de los trabajos descritos en esta orden y entrega al cliente la explicación básica de operación, paro, monitoreo, garantías y canal de soporte. La firma confirma recepción física y orientación; no sustituye la revisión administrativa de evidencias ni las obligaciones de interconexión y medición que continúen pendientes.', 14, 226, { size: 8, tone: COLORS.ink, maxWidth: 182, lineHeight: 1.45 });
+  drawLine(doc, 18, 264, 89, 264, COLORS.slate, .35);
+  drawLine(doc, 121, 264, 192, 264, COLORS.slate, .35);
+  drawText(doc, clean(project.customer_name, 'Cliente'), 53.5, 270, { size: 6.5, tone: COLORS.slate, align: 'center', maxWidth: 68 });
+  drawText(doc, 'Responsable CDSE / cuadrilla', 156.5, 270, { size: 6.5, tone: COLORS.slate, align: 'center' });
+
+  doc.addPage();
+  addDocumentChrome(doc, assets, project, 2, 2, 'Control de calidad');
+  drawTitle(doc, 'CIERRE DE CAMPO', 'Calidad, pruebas y pendientes.', 'Resumen del checklist digital. Las fotografías y mediciones completas permanecen en el expediente.');
+  let y = 78;
+  const categories = [
+    ['pre_start', 'Preparación'], ['safety', 'Seguridad'], ['mounting', 'Montaje'],
+    ['dc', 'Circuitos DC'], ['ac', 'Circuitos AC'], ['testing', 'Pruebas'], ['handover', 'Entrega'],
+  ];
+  categories.forEach(([code, label]) => {
+    const categoryItems = items.filter((item) => item.category === code);
+    if (!categoryItems.length) return;
+    const complete = categoryItems.filter((item) => item.status === 'complete').length;
+    drawBox(doc, 14, y, 182, 17, complete === categoryItems.length ? COLORS.green : COLORS.mist, 2, complete === categoryItems.length ? null : COLORS.line);
+    drawText(doc, label.toUpperCase(), 20, y + 7, { size: 6.2, weight: 'bold', tone: complete === categoryItems.length ? COLORS.white : COLORS.navy });
+    drawText(doc, complete === categoryItems.length ? 'COMPLETO' : 'CON PENDIENTES', 20, y + 13, { size: 7.6, weight: 'bold', tone: complete === categoryItems.length ? COLORS.white : COLORS.danger });
+    drawText(doc, `${complete} de ${categoryItems.length} controles confirmados`, 190, y + 10.5, { size: 6.8, weight: 'bold', tone: complete === categoryItems.length ? COLORS.white : COLORS.slate, align: 'right' });
+    y += 20;
+  });
+  drawText(doc, 'OBSERVACIONES / PENDIENTES', 14, 224, { size: 7, weight: 'bold', tone: COLORS.navy });
+  drawLine(doc, 14, 233, 196, 233, COLORS.line, .3);
+  drawLine(doc, 14, 243, 196, 243, COLORS.line, .3);
+  drawText(doc, 'Este documento debe firmarse, digitalizarse y cargarse como “Acta de entrega y puesta en marcha” para completar el expediente.', 14, 251, { size: 6.2, tone: COLORS.slate, maxWidth: 182 });
+  return doc;
+}
+
 function saveDoc(doc, filename) {
   doc.save(filename);
 }
@@ -479,6 +540,11 @@ export async function downloadAuthorizationLetter(project) {
 export async function downloadDossierIndex(project) {
   const doc = await createDossierIndexPdf(project);
   saveDoc(doc, `${safeFilename(projectFolio(project))}-indice-expediente.pdf`);
+}
+
+export async function downloadHandoverCertificate(project, workOrder) {
+  const doc = await createHandoverCertificatePdf(project, workOrder);
+  saveDoc(doc, `${safeFilename(projectFolio(project))}-acta-entrega.pdf`);
 }
 
 async function sha256(bytes) {

@@ -12,6 +12,7 @@ import {
   downloadSiteSurveyReport,
   exportProjectDossierZip,
 } from '../../../lib/solar/project-documents.js';
+import Installations from './Installations.jsx';
 import {
   getSupabaseClient,
   getSupabaseFunctionsUrl,
@@ -2128,7 +2129,7 @@ export default function SolarPortal() {
   const [openProjectId, setOpenProjectId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
-    quotes: [], projects: [], tasks: [], commissions: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
+    quotes: [], projects: [], tasks: [], commissions: [], workOrders: [], crews: [], fieldWorkers: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
     zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
@@ -2154,12 +2155,15 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
+    const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
         client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
+        client.from('solar_work_orders').select('*, solar_projects(folio,customer_name,status,seller_user_id), solar_crews(name,daily_capacity_panels), solar_work_order_checklist_items(*), solar_work_order_incidents(*)').order('scheduled_start', { ascending: true }),
+        client.from('solar_crews').select('*, solar_crew_members(*, solar_field_workers(*))').order('name'),
+        client.from('solar_field_workers').select('*').order('full_name'),
         client.from('solar_leads').select('*').order('created_at', { ascending: false }),
         client.from('solar_receipts').select('id,lead_id,created_at,customer_name,tariff_code,seller_user_id').order('created_at', { ascending: false }),
         client.from('solar_modules').select('*').order('watts'),
@@ -2171,7 +2175,7 @@ export default function SolarPortal() {
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
       ]);
-    const firstError = [quotes, projects, tasks, commissions, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
+    const firstError = [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
@@ -2181,6 +2185,9 @@ export default function SolarPortal() {
       projects: projects.data ?? [],
       tasks: tasks.data ?? [],
       commissions: commissions.data ?? [],
+      workOrders: workOrders.data ?? [],
+      crews: crews.data ?? [],
+      fieldWorkers: fieldWorkers.data ?? [],
       leads: leads.data ?? [],
       receipts: receipts.data ?? [],
       modules: moduleRows,
@@ -2247,6 +2254,7 @@ export default function SolarPortal() {
     ['quotes', 'Oportunidades'],
     ['projects', 'Proyectos'],
     ['agenda', 'Agenda'],
+    ['installations', 'Instalaciones'],
     ['finance', 'Finanzas'],
     ...(isAdmin ? [['leads', 'Leads y recibos'], ['catalog', 'Catálogo y precios'], ['team', 'Vendedores']] : []),
   ];
@@ -2275,6 +2283,7 @@ export default function SolarPortal() {
         {view === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
         {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
         {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {view === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'leads' && isAdmin && <Leads data={data} refresh={() => load(session)} />}
         {view === 'catalog' && isAdmin && <Catalog data={data} refresh={() => load(session)} />}

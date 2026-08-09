@@ -507,6 +507,99 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-commission-policy, .sp-commission-action { display: grid; grid-template-columns: .6fr .8fr 1.4fr auto; gap: 1rem; align-items: end; margin-top: 1.5rem; padding: 1.25rem; background: var(--sp-white); border-block: 1px solid var(--sp-line); }
 .sp-commission-action { grid-template-columns: minmax(0, 1fr) auto; }
 
+.sp-field-signal { display: flex; align-items: center; gap: .8rem; margin: -2rem 0 1.5rem; color: var(--sp-muted); font-size: .7rem; }
+.sp-field-signal b { padding: .32rem .55rem; color: var(--sp-white); text-transform: uppercase; letter-spacing: .07em; }
+.sp-field-signal .is-online { background: var(--sp-success); }
+.sp-field-signal .is-offline { background: var(--sp-danger); }
+.sp-install-tabs { display: flex; gap: 0; margin-top: 2.5rem; border-bottom: 1px solid var(--sp-ink); }
+.sp-install-tabs button { min-height: 3rem; border: 0; padding: .65rem 1.25rem; color: var(--sp-muted); background: transparent; font-size: .75rem; font-weight: 750; cursor: pointer; }
+.sp-install-tabs button.is-active { color: var(--sp-white); background: var(--sp-ink); }
+.sp-install-schedule { display: grid; grid-template-columns: minmax(0, 1fr) minmax(19rem, 26rem); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; align-items: start; }
+.sp-work-order-list { border-top: 1px solid var(--sp-line); }
+.sp-work-order-list > button { width: 100%; min-height: 6rem; display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 1.2rem; position: relative; border: 0; border-bottom: 1px solid var(--sp-line); padding: 1rem 0 1.25rem; text-align: left; background: transparent; cursor: pointer; }
+.sp-work-order-list > button:hover strong, .sp-work-order-list > button.is-active strong { color: var(--sp-blue); }
+.sp-work-order-list time { display: grid; place-content: center; align-self: stretch; border-inline-end: 1px solid var(--sp-line); color: var(--sp-muted); font-size: .66rem; text-transform: uppercase; }
+.sp-work-order-list time b { display: block; color: var(--sp-ink); font-family: "Newsreader", serif; font-size: 2rem; line-height: .8; }
+.sp-work-order-list span, .sp-work-order-list strong, .sp-work-order-list small { display: block; }
+.sp-work-order-list span { color: var(--sp-blue); font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.sp-work-order-list strong { overflow-wrap: anywhere; margin-top: .25rem; font-size: 1rem; }
+.sp-work-order-list small { margin-top: .4rem; color: var(--sp-muted); font-size: .7rem; }
+.sp-work-order-list i { position: absolute; inset: auto 0 0 5.4rem; height: 3px; overflow: hidden; background: var(--sp-line); }
+.sp-work-order-list i b { display: block; height: 100%; background: var(--sp-sun); }
+.sp-work-order-form { position: sticky; top: 2rem; border-top: 3px solid var(--sp-sun); padding-top: 1rem; }
+.sp-work-order-form h2 { margin: .5rem 0 1.5rem; font-family: "Newsreader", serif; font-size: 2.5rem; line-height: .95; }
+.sp-work-order-form .sp-field { margin-top: 1rem; }
+.sp-work-order-form textarea { min-height: 5.5rem; resize: vertical; }
+.sp-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.sp-work-order-form .sp-button { width: 100%; margin-top: 1.5rem; }
+.sp-field-order { margin-top: 2.5rem; container-type: inline-size; }
+.sp-field-order-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1.25rem; }
+.sp-field-order-head h2 { overflow-wrap: anywhere; margin: .4rem 0 .25rem; font-family: "Newsreader", serif; font-size: clamp(2.6rem, 5vw, 4.5rem); line-height: .92; }
+.sp-field-order-head p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); font-size: .8rem; }
+.sp-field-progress { min-width: 9rem; border-top: 3px solid var(--sp-sun); padding-top: .5rem; text-align: right; }
+.sp-field-progress strong, .sp-field-progress span { display: block; }
+.sp-field-progress strong { font-family: "Newsreader", serif; font-size: 3.5rem; line-height: 1; }
+.sp-field-progress span { color: var(--sp-muted); font-size: .68rem; }
+.sp-field-actions { position: sticky; z-index: 5; top: 0; display: flex; flex-wrap: wrap; gap: .35rem; padding: .65rem 0; background: color-mix(in oklch, var(--sp-paper) 94%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--sp-line); }
+.sp-field-actions button { min-height: 2.9rem; border: 1px solid var(--sp-line); padding: .6rem .9rem; color: var(--sp-ink); background: var(--sp-paper); font-size: .72rem; font-weight: 750; cursor: pointer; }
+.sp-field-actions button.is-primary { border-color: var(--sp-navy); color: var(--sp-white); background: var(--sp-navy); }
+.sp-field-actions button.is-stop { border-color: var(--sp-danger); color: var(--sp-white); background: var(--sp-danger); }
+.sp-field-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem); gap: clamp(2rem, 5vw, 5rem); margin-top: 2rem; align-items: start; }
+.sp-field-checklist { display: grid; gap: 2.8rem; }
+.sp-field-checklist > section { border-top: 1px solid var(--sp-ink); }
+.sp-field-checklist > section.is-safety { border-top: 5px solid var(--sp-sun); }
+.sp-field-checklist > section > header { min-height: 4.8rem; display: flex; align-items: center; justify-content: space-between; }
+.sp-field-checklist > section > header span { color: var(--sp-blue); font-size: .58rem; font-weight: 800; letter-spacing: .1em; }
+.sp-field-checklist > section > header h3 { margin: .2rem 0 0; font-family: "Newsreader", serif; font-size: 2rem; }
+.sp-field-checklist > section > header b { color: var(--sp-muted); font-variant-numeric: tabular-nums; }
+.sp-field-checklist article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; border-top: 1px solid var(--sp-line); }
+.sp-field-checklist article > button:first-child { min-width: 0; min-height: 4.6rem; display: grid; grid-template-columns: 2.8rem minmax(0, 1fr); gap: 1rem; align-items: center; border: 0; padding: .7rem 0; text-align: left; background: transparent; cursor: pointer; }
+.sp-field-checklist article > button:first-child > span { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border: 1px solid var(--sp-muted); font-size: 1.1rem; font-weight: 900; }
+.sp-field-checklist article.is-complete > button:first-child > span { border-color: var(--sp-success); color: var(--sp-white); background: var(--sp-success); }
+.sp-field-checklist article.is-blocked > button:first-child > span { border-color: var(--sp-danger); color: var(--sp-danger); }
+.sp-field-checklist article strong, .sp-field-checklist article small, .sp-field-checklist article em { display: block; overflow-wrap: anywhere; }
+.sp-field-checklist article strong { font-size: .86rem; }
+.sp-field-checklist article small { margin-top: .25rem; color: var(--sp-muted); font-size: .68rem; line-height: 1.4; }
+.sp-field-checklist article em { margin-top: .35rem; color: var(--sp-danger); font-size: .67rem; font-style: normal; font-weight: 700; }
+.sp-block-item { min-width: 4.5rem; border: 0; color: var(--sp-danger); background: transparent; font-size: .65rem; font-weight: 750; cursor: pointer; }
+.sp-field-rail { position: sticky; top: 4.5rem; display: grid; gap: 2.5rem; }
+.sp-field-rail > section { border-top: 3px solid var(--sp-sun); padding-top: 1rem; }
+.sp-field-rail h3 { margin: .45rem 0 .6rem; font-family: "Newsreader", serif; font-size: 2rem; }
+.sp-field-rail > section > p:not(.sp-section-number) { color: var(--sp-muted); font-size: .72rem; line-height: 1.55; }
+.sp-field-rail .sp-upload-action { width: 100%; min-height: 3.2rem; justify-content: center; border: 1px solid var(--sp-navy); margin-top: .8rem; }
+.sp-field-rail form .sp-field { margin-top: .8rem; }
+.sp-field-rail textarea { min-height: 4.5rem; resize: vertical; }
+.sp-field-rail form .sp-button { width: 100%; margin-top: 1rem; }
+.sp-incident-list { margin-top: 1.5rem; }
+.sp-incident-list article { display: grid; gap: .25rem; border-top: 1px solid var(--sp-line); padding: .8rem 0; }
+.sp-incident-list span { width: max-content; padding: .2rem .4rem; color: var(--sp-white); background: var(--sp-muted); font-size: .58rem; font-weight: 800; text-transform: uppercase; }
+.sp-incident-list span.is-high, .sp-incident-list span.is-critical { background: var(--sp-danger); }
+.sp-incident-list span.is-medium { color: var(--sp-ink); background: var(--sp-sun); }
+.sp-incident-list strong { overflow-wrap: anywhere; font-size: .76rem; }
+.sp-incident-list small { color: var(--sp-muted); font-size: .67rem; line-height: 1.4; }
+.sp-incident-list button { min-height: 2.75rem; width: max-content; border: 0; padding: 0; color: var(--sp-blue); background: transparent; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.sp-team-operations { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; }
+.sp-team-operations > section { min-width: 0; border-top: 1px solid var(--sp-ink); padding-top: 1rem; }
+.sp-team-operations header h2 { margin: .4rem 0 1.5rem; font-family: "Newsreader", serif; font-size: 2.7rem; }
+.sp-field-worker-list article, .sp-crew-list article { min-height: 4.2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--sp-line); }
+.sp-field-worker-list strong, .sp-field-worker-list small, .sp-crew-list strong, .sp-crew-list small { display: block; overflow-wrap: anywhere; }
+.sp-field-worker-list small, .sp-crew-list small { margin-top: .2rem; color: var(--sp-muted); font-size: .67rem; }
+.sp-field-worker-list > article > span { max-width: 9rem; text-align: right; font-size: .62rem; font-weight: 750; }
+.sp-field-worker-list .is-warning { color: var(--sp-danger); }
+.sp-field-worker-list .is-ready { color: var(--sp-success); }
+.sp-crew-list > article > b { color: var(--sp-blue); font-size: 1.25rem; text-align: right; }
+.sp-team-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 3px solid var(--sp-sun); }
+.sp-team-form .sp-button { align-self: end; }
+.sp-team-form--crew { grid-template-columns: 1.3fr .7fr auto; }
+.sp-team-form--assign { grid-template-columns: 1fr 1fr 1fr auto; }
+
+@container (max-width: 760px) {
+  .sp-field-order-head { grid-template-columns: 1fr; }
+  .sp-field-progress { max-width: 10rem; text-align: left; }
+  .sp-field-grid { grid-template-columns: 1fr; }
+  .sp-field-rail { position: static; }
+}
+
 @media (max-width: 980px) {
   .sp-login-shell { grid-template-columns: 1fr; }
   .sp-login-story { min-height: 48vh; }
@@ -529,6 +622,9 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-finance-index { position: static; }
   .sp-payment-form { grid-template-columns: repeat(2, 1fr); }
   .sp-payment-form .sp-button { width: 100%; }
+  .sp-install-schedule { grid-template-columns: 1fr; }
+  .sp-work-order-form { position: static; }
+  .sp-team-operations { grid-template-columns: 1fr; }
   .sp-agenda-row { grid-template-columns: 7rem minmax(0, 1fr); }
   .sp-agenda-actions { grid-column: 2; }
   .sp-project-facts { grid-template-columns: repeat(2, 1fr); }
@@ -621,6 +717,20 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-commission-equation > b { display: none; }
   .sp-milestones { grid-template-columns: 1fr; }
   .sp-commission-policy, .sp-commission-action { grid-template-columns: 1fr; padding-inline: 0; background: transparent; }
+  .sp-field-signal { align-items: flex-start; flex-direction: column; margin-top: -1rem; }
+  .sp-install-tabs { position: sticky; z-index: 6; top: 0; overflow-x: auto; background: var(--sp-paper); }
+  .sp-install-tabs button { flex: 1 0 auto; min-height: 3.2rem; }
+  .sp-field-pair { grid-template-columns: 1fr; }
+  .sp-field-order-head { grid-template-columns: 1fr; }
+  .sp-field-progress { text-align: left; }
+  .sp-field-actions { inset: auto 0 4.6rem; top: auto; margin-inline: -1rem; padding: .55rem 1rem; overflow-x: auto; flex-wrap: nowrap; background: var(--sp-paper); }
+  .sp-field-actions button { flex: 0 0 auto; min-height: 3.1rem; }
+  .sp-field-grid { grid-template-columns: 1fr; }
+  .sp-field-rail { position: static; }
+  .sp-field-checklist article > button:first-child { min-height: 5.2rem; }
+  .sp-field-checklist article > button:first-child > span { width: 3rem; height: 3rem; }
+  .sp-block-item { min-width: 4.8rem; }
+  .sp-team-form, .sp-team-form--crew, .sp-team-form--assign { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

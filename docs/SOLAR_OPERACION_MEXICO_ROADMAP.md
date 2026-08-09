@@ -9,7 +9,8 @@ Fecha de corte: 8 de agosto de 2026.
 - **Puerta técnica desplegada:** el sistema exige visita aprobada, ingeniería aprobada y documentos base completos antes de permitir el estado `ready_for_submission`; para `submitted_to_cfe` exige además folio de seguimiento.
 - **Recursos desplegados:** reporte de levantamiento, carta de autorización condicional, índice documental y ZIP privado con archivos, versiones, manifiesto y huellas SHA-256. La generación y las aperturas quedan auditadas.
 - **Módulo financiero base desplegado:** calendario automático de cobros, captura y conciliación de pagos, comisión sobre base antes de IVA, dos hitos de devengo, autorización y liquidación con bitácora. Se adelantó este núcleo de la Fase 5 por prioridad comercial.
-- **Siguiente hito:** Fase 3 — agenda de capacidad, órdenes de trabajo, cuadrillas, instalación móvil y acta de entrega. Las fases 4 a 6 continúan según el orden definido en este documento; en Fase 5 aún faltan reversos, margen real, exportación contable y reportes por periodo.
+- **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal y acta de entrega PDF.
+- **Siguiente hito:** Fase 4 — seguimiento CFE, acuses, observaciones, contrato y medidor. En Fase 3 aún quedan como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano; en Fase 5 faltan reversos, margen real, exportación contable y reportes por periodo.
 
 ## 1. Objetivo
 
@@ -271,12 +272,17 @@ Núcleo nuevo:
 - `solar_payments`: evidencia y conciliación de cobros del cliente.
 - `solar_commission_milestones`: devengo por anticipo y entrega.
 - `solar_commission_events`: bitácora inmutable de términos, devengo, autorización y pago.
+- `solar_field_workers`: padrón activo de personal, oficio y vigencias operativas.
+- `solar_crews`: cuadrillas y capacidad diaria declarada.
+- `solar_crew_members`: asignación histórica de personal y función.
+- `solar_work_orders`: reserva de capacidad, horario, alcance, estado y pausa de seguridad.
+- `solar_work_order_checklist_items`: controles de preparación, seguridad, montaje, DC, AC, pruebas y entrega.
+- `solar_work_order_incidents`: incidencias, severidad, acción inmediata y resolución.
 
 Extensiones posteriores:
 
 - `solar_site_surveys` y evidencias;
 - `solar_design_revisions`;
-- `solar_work_orders`, `solar_crews`, `solar_work_order_members`;
 - `solar_inventory_reservations` y consumo;
 - `solar_warranties`, `solar_assets` y números de serie;
 - `solar_service_cases` y generación monitoreada.
