@@ -593,6 +593,69 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-team-form--crew { grid-template-columns: 1.3fr .7fr auto; }
 .sp-team-form--assign { grid-template-columns: 1fr 1fr 1fr auto; }
 
+/* CFE casework: a precise docket, not another dashboard of cards. */
+.sp-cfe-shell { display: grid; grid-template-columns: minmax(17rem, 25rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; align-items: start; }
+.sp-cfe-list { position: sticky; top: 1.5rem; border-top: 3px solid var(--sp-sun); }
+.sp-cfe-list .sp-subhead { min-height: 4.5rem; }
+.sp-cfe-list > button { width: 100%; min-height: 5.5rem; display: grid; grid-template-columns: .65rem minmax(0, 1fr) auto; gap: .8rem; align-items: center; border: 0; border-top: 1px solid var(--sp-line); padding: .85rem 0; text-align: left; background: transparent; cursor: pointer; }
+.sp-cfe-list > button:hover strong, .sp-cfe-list > button.is-active strong { color: var(--sp-blue); }
+.sp-cfe-list > button.is-active { background: linear-gradient(90deg, color-mix(in oklch, var(--sp-blue) 7%, transparent), transparent); }
+.sp-cfe-list strong, .sp-cfe-list small { display: block; overflow-wrap: anywhere; }
+.sp-cfe-list strong { font-size: .82rem; }
+.sp-cfe-list small { margin-top: .25rem; color: var(--sp-muted); font-size: .65rem; }
+.sp-cfe-list > button > b { color: var(--sp-ink); font-family: "Newsreader", serif; font-size: 1.6rem; text-align: right; }
+.sp-cfe-list > button > b small { font-family: "Instrument Sans", sans-serif; font-size: .55rem; font-weight: 600; }
+.sp-cfe-dot { width: .55rem; height: 2.5rem; background: var(--sp-line); }
+.sp-cfe-dot.is-observation, .sp-cfe-dot.is-cancelled { background: var(--sp-danger); }
+.sp-cfe-dot.is-responded, .sp-cfe-dot.is-meter_pending, .sp-cfe-dot.is-meter_scheduled { background: var(--sp-sun); }
+.sp-cfe-dot.is-approved, .sp-cfe-dot.is-meter_installed, .sp-cfe-dot.is-interconnected, .sp-cfe-dot.is-closed { background: var(--sp-success); }
+.sp-cfe-detail { min-width: 0; }
+.sp-cfe-hero { display: flex; justify-content: space-between; gap: 2rem; align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1.25rem; }
+.sp-cfe-hero h2 { overflow-wrap: anywhere; margin: .35rem 0 .2rem; font-family: "Newsreader", serif; font-size: clamp(2.5rem, 5vw, 4rem); line-height: .95; }
+.sp-cfe-hero p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); font-size: .76rem; }
+.sp-cfe-clock { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--sp-line); }
+.sp-cfe-clock > div { min-width: 0; padding: 1.3rem .8rem 1.3rem 0; }
+.sp-cfe-clock > div + div { border-left: 1px solid var(--sp-line); padding-left: 1rem; }
+.sp-cfe-clock span, .sp-cfe-clock strong, .sp-cfe-clock small { display: block; }
+.sp-cfe-clock span { color: var(--sp-muted); font-size: .6rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.sp-cfe-clock strong { overflow-wrap: anywhere; margin-top: .35rem; font-family: "Newsreader", serif; font-size: 2rem; line-height: 1; }
+.sp-cfe-clock small { margin-top: .25rem; color: var(--sp-muted); font-size: .6rem; }
+.sp-cfe-rail { display: grid; grid-template-columns: repeat(6, 1fr); margin: 2.3rem 0; }
+.sp-cfe-rail > div { position: relative; border-top: 2px solid var(--sp-line); padding: .75rem .35rem 0 0; }
+.sp-cfe-rail > div::before { content: ""; position: absolute; width: .65rem; height: .65rem; inset: -.4rem auto auto 0; border-radius: 50%; background: var(--sp-line); }
+.sp-cfe-rail > div.is-complete { border-color: var(--sp-success); }
+.sp-cfe-rail > div.is-complete::before { background: var(--sp-success); }
+.sp-cfe-rail span, .sp-cfe-rail strong { display: block; }
+.sp-cfe-rail span { color: var(--sp-blue); font-size: .55rem; font-weight: 800; }
+.sp-cfe-rail strong { margin-top: .2rem; font-size: .65rem; }
+.sp-cfe-columns { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2rem, 4vw, 4rem); }
+.sp-cfe-columns > section, .sp-cfe-observations { border-top: 1px solid var(--sp-ink); padding-top: .9rem; }
+.sp-cfe-columns h3, .sp-cfe-observations h3 { margin: .3rem 0 0; font-family: "Newsreader", serif; font-size: 1.8rem; }
+.sp-cfe-docs > div { min-height: 3.6rem; display: grid; grid-template-columns: .5rem minmax(0, 1fr) auto; gap: .65rem; align-items: center; border-top: 1px solid var(--sp-line); }
+.sp-cfe-docs > div > span { width: .45rem; height: 1.7rem; background: var(--sp-line); }
+.sp-cfe-docs > div > span.is-approved { background: var(--sp-success); }
+.sp-cfe-docs > div > span.is-uploaded { background: var(--sp-sun); }
+.sp-cfe-docs strong { overflow-wrap: anywhere; font-size: .72rem; }
+.sp-cfe-docs small { color: var(--sp-muted); font-size: .6rem; }
+.sp-cfe-facts { margin: 0; }
+.sp-cfe-facts > div { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; border-top: 1px solid var(--sp-line); padding: .8rem 0; }
+.sp-cfe-facts dt { color: var(--sp-muted); font-size: .65rem; }
+.sp-cfe-facts dd { overflow-wrap: anywhere; margin: 0; font-size: .7rem; font-weight: 750; text-align: right; }
+.sp-cfe-observations { margin-top: 3.5rem; }
+.sp-cfe-observations > article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; border-top: 1px solid var(--sp-line); padding: 1.1rem 0; }
+.sp-cfe-observations > article.is-open, .sp-cfe-observations > article.is-rejected { border-left: 3px solid var(--sp-danger); padding-left: .8rem; }
+.sp-cfe-observations article span, .sp-cfe-observations article strong, .sp-cfe-observations article small { display: block; }
+.sp-cfe-observations article span { color: var(--sp-blue); font-size: .58rem; font-weight: 800; letter-spacing: .08em; }
+.sp-cfe-observations article strong { margin-top: .35rem; overflow-wrap: anywhere; font-size: .78rem; }
+.sp-cfe-observations article small { margin-top: .4rem; color: var(--sp-muted); font-size: .62rem; }
+.sp-cfe-observations article p { margin: .75rem 0 0; color: var(--sp-muted); font-size: .7rem; line-height: 1.5; }
+.sp-cfe-observations article button { min-height: 2.8rem; border: 1px solid var(--sp-navy); padding: .5rem .8rem; background: transparent; font-size: .65rem; font-weight: 750; cursor: pointer; }
+.sp-cfe-observation-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, .45fr) auto; gap: 1rem; align-items: end; margin-top: 1rem; padding: 1.2rem; background: color-mix(in oklch, var(--sp-line) 35%, transparent); }
+.sp-cfe-observation-form textarea { min-height: 4.2rem; resize: vertical; }
+.sp-cfe-form { border-top: 3px solid var(--sp-sun); padding-top: 1rem; }
+.sp-cfe-form .sp-form-grid { margin: 1.5rem 0; }
+.sp-cfe-form textarea { min-height: 6rem; resize: vertical; }
+
 @container (max-width: 760px) {
   .sp-field-order-head { grid-template-columns: 1fr; }
   .sp-field-progress { max-width: 10rem; text-align: left; }
@@ -625,6 +688,11 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-install-schedule { grid-template-columns: 1fr; }
   .sp-work-order-form { position: static; }
   .sp-team-operations { grid-template-columns: 1fr; }
+  .sp-cfe-shell { grid-template-columns: 1fr; }
+  .sp-cfe-list { position: static; }
+  .sp-cfe-columns { grid-template-columns: 1fr; }
+  .sp-cfe-observation-form { grid-template-columns: 1fr 1fr; }
+  .sp-cfe-observation-form .sp-button { grid-column: 1 / -1; }
   .sp-agenda-row { grid-template-columns: 7rem minmax(0, 1fr); }
   .sp-agenda-actions { grid-column: 2; }
   .sp-project-facts { grid-template-columns: repeat(2, 1fr); }
@@ -731,6 +799,15 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-field-checklist article > button:first-child > span { width: 3rem; height: 3rem; }
   .sp-block-item { min-width: 4.8rem; }
   .sp-team-form, .sp-team-form--crew, .sp-team-form--assign { grid-template-columns: 1fr; }
+  .sp-cfe-hero { align-items: start; flex-direction: column; }
+  .sp-cfe-clock { grid-template-columns: 1fr 1fr; }
+  .sp-cfe-clock > div:nth-child(3) { border-top: 1px solid var(--sp-line); border-left: 0; }
+  .sp-cfe-clock > div:nth-child(4) { border-top: 1px solid var(--sp-line); }
+  .sp-cfe-rail { grid-template-columns: repeat(3, 1fr); row-gap: 1.5rem; }
+  .sp-cfe-observations > article { grid-template-columns: 1fr; }
+  .sp-cfe-observations article button { width: 100%; }
+  .sp-cfe-observation-form { grid-template-columns: 1fr; padding-inline: 0; background: transparent; }
+  .sp-cfe-observation-form .sp-button { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -10,7 +10,8 @@ Fecha de corte: 8 de agosto de 2026.
 - **Recursos desplegados:** reporte de levantamiento, carta de autorización condicional, índice documental y ZIP privado con archivos, versiones, manifiesto y huellas SHA-256. La generación y las aperturas quedan auditadas.
 - **Módulo financiero base desplegado:** calendario automático de cobros, captura y conciliación de pagos, comisión sobre base antes de IVA, dos hitos de devengo, autorización y liquidación con bitácora. Se adelantó este núcleo de la Fase 5 por prioridad comercial.
 - **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal y acta de entrega PDF.
-- **Siguiente hito:** Fase 4 — seguimiento CFE, acuses, observaciones, contrato y medidor. En Fase 3 aún quedan como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano; en Fase 5 faltan reversos, margen real, exportación contable y reportes por periodo.
+- **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
+- **Siguiente hito:** completar la Fase 5 con reversos, margen real, exportación contable y reportes por periodo. En Fase 3 permanecen como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano.
 
 ## 1. Objetivo
 
@@ -278,6 +279,8 @@ Núcleo nuevo:
 - `solar_work_orders`: reserva de capacidad, horario, alcance, estado y pausa de seguridad.
 - `solar_work_order_checklist_items`: controles de preparación, seguridad, montaje, DC, AC, pruebas y entrega.
 - `solar_work_order_incidents`: incidencias, severidad, acción inmediata y resolución.
+- `solar_cfe_cases`: ingreso, estado, folio, espera atribuible, seguimientos, contratos, medidor e interconexión.
+- `solar_cfe_observations`: ciclos numerados de prevención/corrección, compromiso, respuesta y evidencia.
 
 Extensiones posteriores:
 
