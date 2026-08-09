@@ -1,7 +1,7 @@
 # Auditoría vigente del portal CDSE Solar — agosto de 2026
 
 Fecha de revisión: 8 de agosto de 2026. Evidencia: esquema remoto hasta la
-migración `202608080011`, componentes publicados, 22 pruebas automatizadas,
+migración `202608080014`, componentes publicados, 28 pruebas automatizadas,
 compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
@@ -11,22 +11,20 @@ por IA: conserva una dirección editorial propia, paleta cálida/marino, jerarqu
 tipográfica consistente y superficies planas. Evita glassmorphism, neón,
 gradientes de texto y cuadrículas repetitivas de tarjetas.
 
-La deuda visible no es estética sino de escala: `SolarPortal.jsx` supera 2,400
-líneas y la barra móvil expone cada módulo en una sola fila desplazable. Los
+La deuda visible no es estética sino de escala: `SolarPortal.jsx` conserva áreas
+monolíticas y la barra móvil expone cada módulo en una sola fila desplazable. Los
 diálogos nativos `prompt/confirm` aparecen en decisiones auditables y no ofrecen
 contexto, validación en línea ni recuperación clara.
 
 ## Resumen ejecutivo
 
 - 0 bloqueos críticos vigentes en el flujo implementado.
-- 2 hallazgos altos: inventario comprometido/consumido incompleto y perfiles
-  globales limitados a administrador/vendedor.
-- 4 hallazgos medios: navegación móvil, búsqueda global, accesibilidad de foco y
-  tamaño del módulo principal.
+- 1 hallazgo alto: perfiles globales limitados a administrador/vendedor.
+- 3 hallazgos medios: navegación móvil, búsqueda global y tamaño del módulo principal.
 - 3 hallazgos bajos: diálogos nativos, colores de aviso fuera de tokens y falta
   de una política automatizada de retención.
-- Calidad funcional de fases 1–5: **8.4/10**.
-- Cobertura del objetivo completo: **8.5/10**.
+- Calidad funcional de fases 1–6: **9.0/10**.
+- Cobertura del objetivo completo: **9.1/10**.
 
 ## Evidencia de requisitos ya logrados
 
@@ -44,21 +42,11 @@ contexto, validación en línea ni recuperación clara.
 | Comisión 5–10% antes de IVA | Logrado | libro, hitos, aprobación, pago, reverso y recuperación |
 | Costos y margen | Logrado | migraciones `010`/`011`, reporte por periodo y CSV |
 | Postventa y garantías | Logrado | migración `012`, activos, casos, generación y seguimiento |
+| Inventario comprometido y consumido | Logrado | migración `013`, saldos, partidas, RPC transaccionales y libro mayor |
 
 ## Hallazgos altos
 
-### A1. Material comprometido y consumido no tiene libro propio
-
-**Ubicación:** instalación y finanzas.
-
-**Impacto:** los costos reales pueden capturarse, pero no se sabe qué panel,
-inversor, protección o estructura se reservó, entregó, consumió, devolvió o quedó
-con número de serie en el sitio.
-
-**Recomendación:** reservas y movimientos inmutables por orden; la salida debe
-convertir equipos serializables en activos de postventa.
-
-### A2. El perfil global no representa todas las funciones
+### A1. El perfil global no representa todas las funciones
 
 **Ubicación:** `solar_profiles` y administración de usuarios.
 
@@ -83,17 +71,11 @@ Operación y Más, sin ocultar funciones.
 Cada módulo tiene filtros propios, pero no existe una búsqueda por cliente,
 teléfono, folio de cotización/proyecto/CFE, número de servicio o serie instalada.
 
-### M3. El foco de teclado es inconsistente
+### M3. El módulo principal dificulta mantener calidad
 
-Los campos muestran foco, pero botones y enlaces no tienen una regla global
-`:focus-visible`. Varios botones de texto tienen objetivos menores a 44 px fuera
-de móvil. Impacta WCAG 2.4.7/2.4.11 y operación con teclado.
-
-### M4. El módulo principal dificulta mantener calidad
-
-`SolarPortal.jsx` concentra 2,400+ líneas y produce un bundle aproximado de 433
-KB sin comprimir. Instalaciones y CFE ya están separados; Finanzas, Ventas,
-Proyectos y Administración deben seguir la misma estrategia con carga diferida.
+`SolarPortal.jsx` todavía concentra Ventas, Proyectos, Finanzas y Administración.
+Postventa e Inventario ya usan carga diferida; las áreas restantes deben seguir
+la misma estrategia para reducir mantenimiento y carga inicial.
 
 ## Hallazgos bajos
 
@@ -124,9 +106,9 @@ Patrones a corregir:
 
 ## Prioridad de ejecución
 
-1. **Inmediato:** inventario comprometido/consumido y series desde la orden.
-2. **Siguiente:** perfiles funcionales, búsqueda global y navegación móvil agrupada.
-3. **Después:** integración opcional con portales de monitoreo.
+1. **Inmediato:** perfiles funcionales, permisos por acción y membresía operativa.
+2. **Siguiente:** búsqueda global y navegación móvil agrupada.
+3. **Después:** serialización desde almacén e integración opcional con portales de monitoreo.
 4. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
 La auditoría no constituye dictamen legal, fiscal, laboral ni eléctrico. La

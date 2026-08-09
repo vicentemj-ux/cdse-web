@@ -704,6 +704,86 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .sp-team-form--crew { grid-template-columns: 1.3fr .7fr auto; }
 .sp-team-form--assign { grid-template-columns: 1fr 1fr 1fr auto; }
 
+/* Inventory: an industrial dispatch sheet with one source of truth for every unit. */
+.sp-inventory-shell { display: grid; grid-template-columns: minmax(17rem, 24rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; align-items: start; }
+.sp-inventory-index { position: sticky; top: 1.5rem; border-top: 3px solid var(--sp-sun); }
+.sp-inventory-index > .sp-field { padding: 1rem 0; }
+.sp-inventory-index > div { border-bottom: 1px solid var(--sp-line); }
+.sp-inventory-index > div > button { width: 100%; min-height: 5.2rem; display: block; border: 0; border-top: 1px solid var(--sp-line); padding: .85rem 0; text-align: left; background: transparent; cursor: pointer; }
+.sp-inventory-index > div > button.is-active { padding-inline: .8rem; background: color-mix(in oklch, var(--sp-blue) 7%, transparent); box-shadow: inset 3px 0 var(--sp-blue); }
+.sp-inventory-index span, .sp-inventory-index strong, .sp-inventory-index small { display: block; overflow-wrap: anywhere; }
+.sp-inventory-index span { color: var(--sp-blue); font-size: .56rem; font-weight: 800; letter-spacing: .08em; }
+.sp-inventory-index strong { margin-top: .22rem; font-size: .78rem; }
+.sp-inventory-index small { margin-top: .22rem; color: var(--sp-muted); font-size: .62rem; }
+.sp-inventory-project { min-width: 0; }
+.sp-inventory-project > header { display: flex; justify-content: space-between; gap: 1.5rem; align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1rem; }
+.sp-inventory-project > header h2 { margin: .25rem 0; overflow-wrap: anywhere; font-family: "Newsreader", serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: .95; }
+.sp-inventory-project > header p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); font-size: .68rem; }
+.sp-material-list > article { display: grid; grid-template-columns: minmax(12rem, 1.1fr) minmax(19rem, .9fr); gap: 1rem 2rem; border-bottom: 1px solid var(--sp-line); padding: 1.3rem 0; }
+.sp-material-list > article.is-pending { box-shadow: inset 3px 0 var(--sp-danger); padding-left: .8rem; }
+.sp-material-list > article.is-ready { box-shadow: inset 3px 0 var(--sp-success); padding-left: .8rem; }
+.sp-material-name span, .sp-material-name strong, .sp-material-name small { display: block; overflow-wrap: anywhere; }
+.sp-material-name span { color: var(--sp-blue); font-size: .56rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.sp-material-name strong { margin-top: .3rem; font-size: .8rem; }
+.sp-material-name small { margin-top: .35rem; color: var(--sp-muted); font-size: .6rem; }
+.sp-material-numbers { display: grid; grid-template-columns: repeat(4, 1fr); }
+.sp-material-numbers > div { min-width: 0; padding-inline: .7rem; border-left: 1px solid var(--sp-line); }
+.sp-material-numbers span, .sp-material-numbers b { display: block; }
+.sp-material-numbers span { color: var(--sp-muted); font-size: .54rem; }
+.sp-material-numbers b { margin-top: .25rem; font-family: "Newsreader", serif; font-size: 1.45rem; }
+.sp-material-numbers .is-short b { color: var(--sp-danger); }
+.sp-material-numbers .is-covered b { color: var(--sp-success); }
+.sp-material-progress { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; }
+.sp-material-progress i { height: .25rem; overflow: hidden; background: var(--sp-line); }
+.sp-material-progress i b { display: block; height: 100%; background: var(--sp-success); }
+.sp-material-progress span { color: var(--sp-muted); font-size: .58rem; font-weight: 750; }
+.sp-material-actions { grid-column: 1 / -1; display: flex; gap: .4rem; flex-wrap: wrap; }
+.sp-material-actions button { min-height: 2.75rem; border: 1px solid var(--sp-line); padding: .55rem .8rem; background: transparent; font-size: .62rem; font-weight: 800; cursor: pointer; }
+.sp-material-actions button.is-primary { border-color: var(--sp-navy); background: var(--sp-navy); color: var(--sp-paper); }
+.sp-inventory-action, .sp-inventory-plan { display: grid; grid-template-columns: minmax(11rem, 1fr) repeat(3, minmax(8rem, .65fr)); gap: .8rem 1rem; align-items: end; margin-top: 1.5rem; padding: 1rem; background: color-mix(in oklch, var(--sp-blue) 6%, var(--sp-paper)); border-top: 3px solid var(--sp-sun); }
+.sp-inventory-action > div strong { display: block; overflow-wrap: anywhere; font-size: .75rem; }
+.sp-inventory-action .sp-field--wide, .sp-inventory-plan .sp-field--wide { grid-column: 1 / -1; }
+.sp-inventory-plan { grid-template-columns: minmax(13rem, 1.1fr) repeat(4, minmax(8rem, .7fr)); margin-top: 3rem; background: transparent; border-top-color: var(--sp-ink); padding-inline: 0; }
+.sp-inventory-plan h3 { margin: .2rem 0; font-family: "Newsreader", serif; font-size: 1.45rem; }
+.sp-inventory-plan p:not(.sp-section-number) { margin: 0; color: var(--sp-muted); font-size: .6rem; }
+.sp-inventory-empty { padding: 3rem 0; border-top: 1px solid var(--sp-line); }
+.sp-inventory-empty strong { font-family: "Newsreader", serif; font-size: 1.5rem; }
+.sp-inventory-empty p { max-width: 38rem; color: var(--sp-muted); font-size: .7rem; line-height: 1.55; }
+.sp-inventory-stock, .sp-inventory-movements { margin-top: 2.5rem; }
+.sp-inventory-stock > .sp-subhead, .sp-inventory-movements > .sp-subhead { align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1rem; }
+.sp-inventory-stock > .sp-subhead h2, .sp-inventory-movements > .sp-subhead h2 { margin: .25rem 0 0; font-family: "Newsreader", serif; font-size: clamp(2rem, 4vw, 3.2rem); }
+.sp-inventory-stock > .sp-subhead .sp-field { min-width: min(22rem, 100%); }
+.sp-stock-list > article { display: grid; grid-template-columns: minmax(14rem, 1.3fr) minmax(17rem, .8fr) auto; gap: 1.5rem; align-items: center; border-bottom: 1px solid var(--sp-line); padding: 1.1rem 0; }
+.sp-stock-list > article.is-low { box-shadow: inset 3px 0 var(--sp-danger); padding-left: .8rem; }
+.sp-stock-list article > div > span, .sp-stock-list article > div > strong, .sp-stock-list article > div > small { display: block; overflow-wrap: anywhere; }
+.sp-stock-list article > div > span { color: var(--sp-blue); font-size: .56rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.sp-stock-list article > div > strong { margin-top: .25rem; font-size: .78rem; }
+.sp-stock-list article > div > small { margin-top: .25rem; color: var(--sp-muted); font-size: .6rem; }
+.sp-stock-list dl { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; }
+.sp-stock-list dl > div { border-left: 1px solid var(--sp-line); padding-left: .8rem; }
+.sp-stock-list dt { color: var(--sp-muted); font-size: .54rem; }
+.sp-stock-list dd { margin: .25rem 0 0; font-family: "Newsreader", serif; font-size: 1.45rem; }
+.sp-stock-list article > b { color: var(--sp-success); font-size: .57rem; letter-spacing: .08em; }
+.sp-stock-list article.is-low > b { color: var(--sp-danger); }
+.sp-stock-admin { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 5rem); margin-top: 3.5rem; }
+.sp-stock-admin > form { border-top: 3px solid var(--sp-sun); padding-top: 1rem; }
+.sp-stock-admin > form + form { border-top-color: var(--sp-ink); }
+.sp-stock-admin h3 { margin: .25rem 0 1.2rem; font-family: "Newsreader", serif; font-size: 2rem; }
+.sp-stock-admin textarea { min-height: 5rem; resize: vertical; }
+.sp-stock-admin .sp-field + .sp-field, .sp-stock-admin .sp-field-pair + .sp-field, .sp-stock-admin .sp-field + .sp-field-pair { margin-top: .75rem; }
+.sp-stock-admin .sp-button { margin-top: 1rem; }
+.sp-inventory-movements > .sp-subhead > p { max-width: 28rem; margin: 0; color: var(--sp-muted); font-size: .7rem; line-height: 1.5; }
+.sp-inventory-movements > div > article { display: grid; grid-template-columns: 8rem minmax(14rem, 1fr) auto minmax(13rem, .65fr); gap: 1.2rem; align-items: center; border-bottom: 1px solid var(--sp-line); padding: 1rem 0; }
+.sp-inventory-movements time { color: var(--sp-muted); font-size: .6rem; }
+.sp-inventory-movements article > div span, .sp-inventory-movements article > div strong, .sp-inventory-movements article > div small { display: block; overflow-wrap: anywhere; }
+.sp-inventory-movements article > div span { color: var(--sp-blue); font-size: .55rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.sp-inventory-movements article > div strong { margin-top: .25rem; font-size: .76rem; }
+.sp-inventory-movements article > div small { margin-top: .25rem; color: var(--sp-muted); font-size: .59rem; }
+.sp-inventory-movements article > b { font-family: "Newsreader", serif; font-size: 1.3rem; white-space: nowrap; }
+.sp-inventory-movements dl { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 0; }
+.sp-inventory-movements dt { color: var(--sp-muted); font-size: .52rem; }
+.sp-inventory-movements dd { margin: .2rem 0 0; font-size: .62rem; font-weight: 750; white-space: nowrap; }
+
 /* CFE casework: a precise docket, not another dashboard of cards. */
 .sp-cfe-shell { display: grid; grid-template-columns: minmax(17rem, 25rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 2.5rem; align-items: start; }
 .sp-cfe-list { position: sticky; top: 1.5rem; border-top: 3px solid var(--sp-sun); }
@@ -814,6 +894,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-after-index > div > button:nth-child(even) { border-left: 1px solid var(--sp-line); padding-left: 1rem; }
   .sp-after-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sp-case-action { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sp-inventory-shell { grid-template-columns: 1fr; }
+  .sp-inventory-index { position: static; }
+  .sp-inventory-index > div { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .sp-inventory-index > div > button:nth-child(even) { border-left: 1px solid var(--sp-line); padding-left: 1rem; }
+  .sp-inventory-action, .sp-inventory-plan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sp-inventory-action > div, .sp-inventory-plan > div { grid-column: 1 / -1; }
+  .sp-stock-list > article { grid-template-columns: minmax(12rem, 1fr) minmax(15rem, 1fr); }
+  .sp-stock-list article > b { grid-column: 1 / -1; }
+  .sp-inventory-movements > div > article { grid-template-columns: 7rem minmax(0, 1fr) auto; }
+  .sp-inventory-movements article dl { grid-column: 2 / -1; }
   .sp-agenda-row { grid-template-columns: 7rem minmax(0, 1fr); }
   .sp-agenda-actions { grid-column: 2; }
   .sp-project-facts { grid-template-columns: repeat(2, 1fr); }
@@ -928,6 +1018,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-asset-list article > span, .sp-warranty-list article > span { grid-column: 1 / -1; }
   .sp-generation-list article { grid-template-columns: 1fr 1fr; }
   .sp-generation-list article > div:first-child { grid-column: 1 / -1; }
+  .sp-inventory-ledger { grid-template-columns: 1fr 1fr; }
+  .sp-inventory-project > header { align-items: start; flex-direction: column; }
+  .sp-inventory-index > div { grid-template-columns: 1fr; }
+  .sp-inventory-index > div > button:nth-child(even) { border-left: 0; padding-left: 0; }
+  .sp-material-list > article { grid-template-columns: 1fr; gap: .9rem; }
+  .sp-material-numbers { grid-template-columns: 1fr 1fr; }
+  .sp-material-numbers > div { border-top: 1px solid var(--sp-line); border-left: 0; padding: .7rem 0; }
+  .sp-material-numbers > div:nth-child(even) { border-left: 1px solid var(--sp-line); padding-left: .7rem; }
+  .sp-inventory-action, .sp-inventory-plan { grid-template-columns: 1fr; padding-inline: .85rem; }
+  .sp-inventory-action .sp-field--wide, .sp-inventory-plan .sp-field--wide, .sp-inventory-action > div, .sp-inventory-plan > div { grid-column: auto; }
+  .sp-material-actions button { min-height: 3rem; flex: 1 1 7rem; }
+  .sp-inventory-stock > .sp-subhead, .sp-inventory-movements > .sp-subhead { align-items: start; flex-direction: column; }
+  .sp-inventory-stock > .sp-subhead .sp-field { width: 100%; min-width: 0; }
+  .sp-stock-list > article { grid-template-columns: 1fr; gap: .8rem; }
+  .sp-stock-list dl { grid-template-columns: repeat(3, 1fr); }
+  .sp-stock-list article > b { grid-column: auto; }
+  .sp-stock-admin { grid-template-columns: 1fr; }
+  .sp-inventory-movements > div > article { grid-template-columns: 1fr auto; gap: .65rem; }
+  .sp-inventory-movements time { grid-column: 1 / -1; }
+  .sp-inventory-movements article dl { grid-column: 1 / -1; }
   .sp-field-signal { align-items: flex-start; flex-direction: column; margin-top: -1rem; }
   .sp-install-tabs { position: sticky; z-index: 6; top: 0; overflow-x: auto; background: var(--sp-paper); }
   .sp-install-tabs button { flex: 1 0 auto; min-height: 3.2rem; }

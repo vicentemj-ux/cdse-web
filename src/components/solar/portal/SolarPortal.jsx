@@ -22,6 +22,7 @@ import {
 } from '../../../lib/supabase/client.js';
 
 const PostSales = lazy(() => import('./PostSales.jsx'));
+const Inventory = lazy(() => import('./Inventory.jsx'));
 
 const TARIFFS = ['1F', 'DAC', 'PDBT', 'GDBT', 'GDMTO', 'GDMTH', 'OTHER'];
 const STATUS_LABELS = {
@@ -2262,7 +2263,7 @@ export default function SolarPortal() {
   const [openProjectId, setOpenProjectId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [data, setData] = useState({
-    quotes: [], projects: [], tasks: [], commissions: [], workOrders: [], crews: [], fieldWorkers: [], cfeCases: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [],
+    quotes: [], projects: [], tasks: [], commissions: [], workOrders: [], crews: [], fieldWorkers: [], cfeCases: [], leads: [], receipts: [], modules: [], inverters: [], prices: [], promotions: [], packages: [], financingOptions: [], inventoryLocations: [], inventoryItems: [], inventoryAllocations: [], inventoryMovements: [],
     zones: [], profiles: [], profileMap: {}, moduleMap: {}, receiptByLead: {},
   });
 
@@ -2288,7 +2289,7 @@ export default function SolarPortal() {
     setProfile(profileData);
     setNeedsBootstrap(false);
 
-    const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
+    const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
         client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_payment_refunds(*), solar_project_cost_entries(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*), solar_assets(*), solar_warranties(*), solar_service_cases(*, solar_service_case_events(*)), solar_generation_readings(*), solar_customer_feedback(*)').order('updated_at', { ascending: false }),
@@ -2308,8 +2309,12 @@ export default function SolarPortal() {
         client.from('solar_financing_options').select('*').order('min_panels'),
         client.from('solar_zones').select('*').order('name'),
         client.from('solar_profiles').select('*').order('full_name'),
+        client.from('solar_inventory_locations').select('*').order('name'),
+        client.from('solar_inventory_items').select('*, solar_inventory_balances(*)').order('name'),
+        client.from('solar_inventory_allocations').select('*, solar_inventory_items(sku,name,category,unit), solar_inventory_locations(name), solar_projects(folio,customer_name,status,seller_user_id), solar_work_orders(folio,status)').order('created_at'),
+        client.from('solar_inventory_movements').select('*, solar_inventory_items(sku,name,category,unit), solar_inventory_locations(name), solar_projects(folio,customer_name), solar_work_orders(folio)').order('created_at', { ascending: false }).limit(500),
       ]);
-    const firstError = [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles]
+    const firstError = [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles, inventoryLocations, inventoryItems, inventoryAllocations, inventoryMovements]
       .find((result) => result.error)?.error;
     if (firstError) setLoadError(errorMessage(firstError));
     const profileRows = profiles.data ?? [profileData];
@@ -2331,6 +2336,10 @@ export default function SolarPortal() {
       promotions: promotions.data ?? [],
       packages: packages.data ?? [],
       financingOptions: financingOptions.data ?? [],
+      inventoryLocations: inventoryLocations.data ?? [],
+      inventoryItems: inventoryItems.data ?? [],
+      inventoryAllocations: inventoryAllocations.data ?? [],
+      inventoryMovements: inventoryMovements.data ?? [],
       zones: zones.data ?? [],
       profiles: profileRows,
       profileMap: Object.fromEntries(profileRows.map((item) => [item.user_id, item])),
@@ -2390,6 +2399,7 @@ export default function SolarPortal() {
     ['projects', 'Proyectos'],
     ['agenda', 'Agenda'],
     ['installations', 'Instalaciones'],
+    ['inventory', 'Inventario'],
     ['cfe', 'Seguimiento CFE'],
     ['post-sales', 'Postventa'],
     ['finance', 'Finanzas'],
@@ -2421,6 +2431,7 @@ export default function SolarPortal() {
         {view === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
         {view === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {view === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
+        {view === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
         {view === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} />}
         {view === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} /></Suspense>}
         {view === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
