@@ -1003,6 +1003,64 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .sp-cfe-form .sp-form-grid { margin: 1.5rem 0; }
 .sp-cfe-form textarea { min-height: 6rem; resize: vertical; }
 
+/* Executive analytics: an editorial operating report, not a wall of generic cards. */
+.sp-analytics { max-width: 112rem; margin-inline: auto; }
+.sp-analytics-header { align-items: start; }
+.sp-analytics-intro { max-width: 42rem; margin: 1.2rem 0 0; color: var(--sp-muted); line-height: 1.55; }
+.sp-analytics-scope { min-width: min(100%, 35rem); display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: .75rem; border-top: 3px solid var(--sp-sun); padding-top: .8rem; }
+.sp-analytics-scope label, .sp-analytics-scope span { display: block; }
+.sp-analytics-scope span { margin-bottom: .35rem; color: var(--sp-muted); font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.sp-analytics-scope input, .sp-analytics-scope select { width: 100%; min-height: 2.8rem; border: 0; border-bottom: 1px solid var(--sp-ink); padding: .4rem .1rem; color: var(--sp-ink); background: transparent; }
+.sp-analytics-ledger { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); color: var(--sp-white); background: var(--sp-ink); }
+.sp-analytics-ledger > div { min-width: 0; padding: 1.35rem clamp(.9rem, 2vw, 1.8rem) 1.5rem; }
+.sp-analytics-ledger > div + div { border-left: 1px solid color-mix(in oklch, var(--sp-white) 15%, transparent); }
+.sp-analytics-ledger span, .sp-analytics-ledger strong, .sp-analytics-ledger small { display: block; }
+.sp-analytics-ledger span { color: var(--sp-sun); font-size: .62rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.sp-analytics-ledger strong { margin: .7rem 0 .3rem; overflow: hidden; font-family: "Newsreader", serif; font-size: clamp(1.65rem, 3vw, 2.8rem); line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.sp-analytics-ledger small { color: color-mix(in oklch, var(--sp-white) 65%, transparent); font-size: .65rem; }
+.sp-analytics-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: clamp(2rem, 4vw, 4.5rem); margin-top: clamp(3rem, 6vw, 6rem); }
+.sp-analytics-panel { min-width: 0; border-top: 1px solid var(--sp-ink); padding-top: 1rem; }
+.sp-analytics-panel > header { display: flex; align-items: start; justify-content: space-between; gap: 2rem; margin-bottom: 2rem; }
+.sp-analytics-panel > header h2 { margin: .45rem 0 0; font-family: "Newsreader", serif; font-size: clamp(1.8rem, 3vw, 2.7rem); line-height: 1; }
+.sp-analytics-panel > header > p { max-width: 25rem; margin: .1rem 0 0; color: var(--sp-muted); font-size: .72rem; line-height: 1.55; }
+.sp-funnel-plot { display: grid; gap: 1.15rem; }
+.sp-funnel-label { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto 3.5rem; align-items: baseline; gap: .5rem; }
+.sp-funnel-label > span { color: var(--sp-blue); font-size: .6rem; font-weight: 800; }
+.sp-funnel-label > strong { font-size: .78rem; }
+.sp-funnel-label > b { font-family: "Newsreader", serif; font-size: 1.7rem; }
+.sp-funnel-label > small { color: var(--sp-muted); text-align: right; font-size: .66rem; }
+.sp-funnel-track { height: .55rem; margin: .25rem 0 0 2.5rem; overflow: hidden; background: color-mix(in oklch, var(--sp-line) 72%, transparent); }
+.sp-funnel-track i { display: block; height: 100%; background: linear-gradient(90deg, var(--sp-blue), color-mix(in oklch, var(--sp-blue) 55%, var(--sp-sun))); transition: width .35s ease; }
+.sp-cycle-line { margin: 0; padding: 0; list-style: none; }
+.sp-cycle-line li { min-height: 5.1rem; display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: .8rem; align-items: center; border-top: 1px solid var(--sp-line); }
+.sp-cycle-line li:first-child { border-top-color: var(--sp-ink); }
+.sp-cycle-line li > span { color: var(--sp-blue); font-size: .6rem; font-weight: 800; }
+.sp-cycle-line strong, .sp-cycle-line small { display: block; }
+.sp-cycle-line strong { font-size: .78rem; }
+.sp-cycle-line small { margin-top: .3rem; color: var(--sp-muted); font-size: .62rem; }
+.sp-cycle-line b { font-family: "Newsreader", serif; font-size: clamp(1.2rem, 2vw, 1.8rem); white-space: nowrap; }
+.sp-exception-panel, .sp-seller-panel { margin-top: clamp(3rem, 6vw, 6rem); }
+.sp-exception-summary { display: flex; align-items: baseline; gap: .8rem; margin-bottom: 1.4rem; }
+.sp-exception-summary strong { font-family: "Newsreader", serif; font-size: 4rem; line-height: .8; }
+.sp-exception-summary span { color: var(--sp-muted); font-size: .72rem; }
+.sp-exception-list { border-bottom: 1px solid var(--sp-line); }
+.sp-exception-list > button { width: 100%; min-height: 4.8rem; display: grid; grid-template-columns: .45rem minmax(0, 1fr) auto 2rem; align-items: center; gap: 1rem; border: 0; border-top: 1px solid var(--sp-line); padding: .7rem .2rem; color: var(--sp-ink); background: transparent; text-align: left; cursor: pointer; }
+.sp-exception-list > button:hover, .sp-exception-list > button:focus-visible { background: color-mix(in oklch, var(--sp-blue) 5%, var(--sp-paper)); }
+.sp-exception-mark { width: .42rem; height: 2.5rem; background: var(--sp-sun); }
+.sp-exception-mark.is-blocked, .sp-exception-mark.is-overdue { background: var(--sp-danger); }
+.sp-exception-mark.is-at_risk { background: var(--sp-sun); }
+.sp-exception-list small, .sp-exception-list strong { display: block; }
+.sp-exception-list small { color: var(--sp-blue); font-size: .59rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.sp-exception-list strong { margin-top: .25rem; overflow-wrap: anywhere; font-size: .78rem; }
+.sp-exception-list button > b { font-family: "Newsreader", serif; font-size: 1.35rem; }
+.sp-exception-list button > i { color: var(--sp-blue); font-style: normal; font-size: 1.2rem; }
+.sp-analytics-empty { margin: 1.5rem 0 0; border-left: 3px solid var(--sp-sun); padding: .8rem 1rem; color: var(--sp-muted); background: color-mix(in oklch, var(--sp-sun) 8%, transparent); font-size: .72rem; line-height: 1.5; }
+.sp-analytics-empty--good { display: grid; gap: .25rem; border-color: var(--sp-success); }
+.sp-seller-panel .sp-table-wrap { border-top-color: var(--sp-ink); }
+.sp-analytics-note { max-width: 52rem; margin-top: 3rem; border-left: 3px solid var(--sp-sun); padding: .3rem 0 .3rem 1rem; }
+.sp-analytics-note strong { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; }
+.sp-analytics-note p { margin: .45rem 0 0; color: var(--sp-muted); font-size: .7rem; line-height: 1.55; }
+
 @container (max-width: 760px) {
   .sp-field-order-head { grid-template-columns: 1fr; }
   .sp-field-progress { max-width: 10rem; text-align: left; }
@@ -1082,6 +1140,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-resource-ledger button:nth-child(3) { border-top: 1px solid var(--sp-line); border-left: 0; }
   .sp-resource-ledger button:nth-child(4) { border-top: 1px solid var(--sp-line); }
   .sp-quote-summary { position: static; }
+  .sp-analytics-header { display: grid; }
+  .sp-analytics-scope { width: 100%; }
+  .sp-analytics-ledger { grid-template-columns: 1fr 1fr; }
+  .sp-analytics-ledger > div:nth-child(3) { border-top: 1px solid color-mix(in oklch, var(--sp-white) 15%, transparent); border-left: 0; }
+  .sp-analytics-ledger > div:nth-child(4) { border-top: 1px solid color-mix(in oklch, var(--sp-white) 15%, transparent); }
+  .sp-analytics-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 680px) {
@@ -1110,6 +1174,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .sp-ledger { grid-template-columns: 1fr 1fr; }
   .sp-ledger > div { padding: 1rem .65rem .95rem 0; }
   .sp-ledger strong { font-size: 2rem; }
+  .sp-analytics-scope { grid-template-columns: 1fr 1fr; }
+  .sp-analytics-scope label:nth-child(3) { grid-column: 1 / -1; }
+  .sp-analytics-ledger strong { font-size: 1.55rem; }
+  .sp-analytics-panel > header { display: grid; gap: .75rem; }
+  .sp-analytics-panel > header > p { max-width: none; }
+  .sp-funnel-label { grid-template-columns: 1.5rem minmax(0, 1fr) auto 2.8rem; }
+  .sp-funnel-track { margin-left: 2rem; }
+  .sp-cycle-line li { grid-template-columns: 1.4rem minmax(0, 1fr); padding: .75rem 0; }
+  .sp-cycle-line li > b { grid-column: 2; }
+  .sp-exception-list > button { grid-template-columns: .35rem minmax(0, 1fr) auto; gap: .7rem; }
+  .sp-exception-list button > i { display: none; }
   .sp-form-grid { grid-template-columns: 1fr; }
   .sp-field--wide { grid-column: auto; }
   .sp-period-row { grid-template-columns: 1.7rem 1fr 1fr 1.5rem; gap: .35rem; }

@@ -5,6 +5,8 @@ import { canOpenModule, canPerform, navigationForRole, roleLabel } from '../src/
 
 test('cada función abre sólo sus áreas de trabajo', () => {
   assert.equal(canOpenModule('seller', 'new'), true);
+  assert.equal(canOpenModule('seller', 'analytics'), true);
+  assert.equal(canOpenModule('operations', 'analytics'), false);
   assert.equal(canOpenModule('seller', 'catalog'), false);
   assert.equal(canOpenModule('installer', 'installations'), true);
   assert.equal(canOpenModule('installer', 'finance'), false);

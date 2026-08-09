@@ -9,8 +9,8 @@ export const STAFF_ROLES = {
 };
 
 const MODULES = {
-  admin: ['overview','new','quotes','projects','agenda','installations','inventory','cfe','post-sales','finance','leads','catalog','team'],
-  seller: ['overview','new','quotes','projects','agenda','post-sales','finance'],
+  admin: ['overview','analytics','new','quotes','projects','agenda','installations','inventory','cfe','post-sales','finance','leads','catalog','team'],
+  seller: ['overview','analytics','new','quotes','projects','agenda','post-sales','finance'],
   operations: ['overview','projects','agenda','installations','inventory','cfe','post-sales'],
   engineering: ['overview','projects','agenda','inventory','cfe'],
   installer: ['overview','projects','agenda','installations','inventory'],

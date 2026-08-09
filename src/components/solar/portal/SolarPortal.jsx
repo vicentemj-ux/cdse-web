@@ -26,6 +26,7 @@ import {
 
 const PostSales = lazy(() => import('./PostSales.jsx'));
 const Inventory = lazy(() => import('./Inventory.jsx'));
+const Analytics = lazy(() => import('./Analytics.jsx'));
 
 const TARIFFS = ['1F', 'DAC', 'PDBT', 'GDBT', 'GDMTO', 'GDMTH', 'OTHER'];
 const STATUS_LABELS = {
@@ -2533,6 +2534,7 @@ export default function SolarPortal() {
   };
   const navigation = navigationForRole(role, [
     ['overview', 'Resumen'],
+    ['analytics', 'Dirección'],
     ['new', 'Nueva cotización'],
     ['quotes', 'Oportunidades'],
     ['projects', 'Proyectos'],
@@ -2589,6 +2591,7 @@ export default function SolarPortal() {
       <main className="sp-main">
         {loadError && <div className="sp-global-error" role="alert">{loadError}</div>}
         {activeView === 'overview' && <Overview data={data} profile={profile} setView={setView} onOpenQuote={openQuote} />}
+        {activeView === 'analytics' && <Suspense fallback={<div className="sp-loading sp-loading--module">Reconstruyendo desempeño comercial y operativo…</div>}><Analytics data={data} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} /></Suspense>}
         {activeView === 'new' && <QuoteForm data={data} session={session} onCreated={() => load(session)} onOpenQuote={openQuote} />}
         {activeView === 'quotes' && <Quotes data={data} refresh={() => load(session)} isAdmin={isAdmin} openQuoteId={openQuoteId} onOpenQuote={openQuote} />}
         {activeView === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}

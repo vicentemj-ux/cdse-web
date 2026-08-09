@@ -1,7 +1,7 @@
 # Auditoría vigente del portal CDSE Solar — agosto de 2026
 
 Fecha de revisión: 9 de agosto de 2026. Evidencia: esquema remoto hasta la
-migración `202608090003`, componentes publicados, 43 pruebas automatizadas,
+migración `202608090003`, componentes publicados, 46 pruebas automatizadas,
 compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
@@ -48,6 +48,7 @@ contexto, validación en línea ni recuperación clara.
 | Búsqueda transversal | Logrado | índice autorizado por RLS y acceso por cliente, teléfono, folio, servicio, CFE o serie |
 | Cadena de custodia por serie | Logrado | recepción/conciliación, apartado, salida, instalación, activo y eventos inmutables |
 | Navegación móvil agrupada | Logrado | Inicio, Ventas, Proyectos, Operación y Más según función |
+| Analítica ejecutiva reconstruible | Logrado | cohortes de conversión, medianas con muestra, excepciones actuales y margen antes de IVA |
 
 ## Hallazgos medios
 
@@ -87,7 +88,7 @@ Patrones a corregir:
 ## Prioridad de ejecución
 
 1. **Siguiente:** integración opcional con portales de monitoreo.
-2. **Después:** analítica consolidada de conversión, ciclo y rentabilidad.
+2. **Después:** ampliar analítica por fuente, zona, completitud y cuadrilla.
 3. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
 La auditoría no constituye dictamen legal, fiscal, laboral ni eléctrico. La
