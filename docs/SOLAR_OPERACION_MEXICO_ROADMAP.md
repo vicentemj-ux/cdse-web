@@ -11,7 +11,7 @@ Fecha de corte: 8 de agosto de 2026.
 - **Módulo financiero base desplegado:** calendario automático de cobros, captura y conciliación de pagos, comisión sobre base antes de IVA, dos hitos de devengo, autorización y liquidación con bitácora. Se adelantó este núcleo de la Fase 5 por prioridad comercial.
 - **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal y acta de entrega PDF.
 - **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
-- **Siguiente hito:** completar la Fase 5 con reversos, margen real, exportación contable y reportes por periodo. En Fase 3 permanecen como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano.
+- **Fase 5 implementada:** reembolsos autorizables, costos presupuestados/reales, margen, reversos y recuperación de comisiones, reporte por periodo/vendedor y CSV auxiliar. En Fase 3 permanecen como mejoras posteriores el inventario consumido y la carga fotográfica reanudable en segundo plano.
 
 ## 1. Objetivo
 
@@ -353,10 +353,10 @@ Extensiones posteriores:
 
 - [implementado] anticipos, hitos, saldo y conciliación;
 - [implementado] aprobación y pago de comisiones;
-- [pendiente] reversos proporcionales y reembolsos;
-- margen presupuestado vs real;
-- reportes por vendedor/proyecto/periodo;
-- exportación contable, sin convertir el portal en sistema fiscal.
+- [implementado] reversos proporcionales, saldos por recuperar y reembolsos parciales;
+- [implementado] margen presupuestado vs real antes de IVA;
+- [implementado] reportes por vendedor/proyecto/periodo;
+- [implementado] exportación CSV auxiliar, sin convertir el portal en sistema fiscal.
 
 **Criterio de éxito:** toda comisión pagada puede reconstruirse desde contrato, base antes de IVA, porcentaje, hitos y aprobación.
 

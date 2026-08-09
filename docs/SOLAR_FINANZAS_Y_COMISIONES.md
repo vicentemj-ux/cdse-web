@@ -4,10 +4,11 @@ Fecha de corte: 8 de agosto de 2026.
 
 ## 1. Qué controla el portal
 
-El módulo **Finanzas** separa deliberadamente dos libros:
+El módulo **Finanzas** separa deliberadamente tres controles:
 
 1. **Cobranza del proyecto:** total acordado con IVA, calendario, movimientos pendientes de revisión, pagos conciliados y saldo.
 2. **Comisión del vendedor:** base congelada antes de IVA, tasa, ajuste justificado, hitos de devengo, autorización y pago.
+3. **Rentabilidad administrativa:** presupuesto, costos reales, margen estimado/real y reporte por periodo.
 
 El portal es un control operativo y auditable. No sustituye banca, contabilidad,
 CFDI, complemento de recepción de pagos ni nómina.
@@ -58,14 +59,38 @@ la propuesta aceptada y no se modifica silenciosamente desde el calendario.
 6. Registrar pago con referencia bancaria y, cuando corresponda, referencia de
    nómina o contabilidad.
 
+### Al registrar costos y margen
+
+- Administración registra cada concepto como presupuesto o costo real.
+- Cada renglón conserva categoría, cantidad, costo unitario antes de IVA, proveedor,
+  fecha, referencia y estado: aprobado, comprometido o pagado.
+- Los costos no se eliminan: se anulan con motivo y permanecen en la bitácora.
+- El margen estimado resta presupuesto y comisión neta al ingreso aceptado antes
+  de IVA. El margen real resta costos efectivamente pagados y comisiones pagadas,
+  netas de recuperaciones.
+- El reporte se filtra por fecha de venta y vendedor y se exporta como CSV UTF-8.
+
+### Reembolsos y reversos
+
+1. Un miembro del proyecto solicita un reembolso sobre un pago conciliado.
+2. Administración autoriza o rechaza; sólo la autorización reduce cobranza y saldo.
+3. La suma de reembolsos pendientes y autorizados nunca puede superar el pago original.
+4. Un hito devengado puede revertirse únicamente con motivo. Si la comisión aún no
+   fue pagada, su neto disminuye; si ya fue pagada, nace un saldo por recuperar.
+5. Toda recuperación exige importe y referencia y queda como evento compensatorio.
+
 ## 4. Controles y límites conocidos
 
 - Los pagos rechazados no afectan el saldo.
 - Los estados y actores quedan en `solar_project_events` y
   `solar_commission_events`.
-- Esta versión no registra todavía reembolsos parciales, cancelaciones con reverso
-  proporcional, costo real, margen ni exportación contable. No deben resolverse
-  cambiando importes históricos: se implementarán como movimientos compensatorios.
+- Los reembolsos, reversos y recuperaciones se registran como movimientos
+  compensatorios; nunca se cambia ni elimina silenciosamente el pago original.
+- El presupuesto automático inicial usa los costos de catálogo disponibles para
+  paneles e inversor. Estructura, material eléctrico, mano de obra y demás conceptos
+  deben presupuestarse explícitamente si el catálogo aún no tiene una plantilla completa.
+- La exportación CSV es un auxiliar operativo: no genera pólizas, CFDI, notas de
+  crédito ni asientos contables.
 - La tasa de 0% puede existir sólo en proyectos históricos que nacieron sin una
   política configurada; queda marcada para revisión y no puede autorizarse.
 

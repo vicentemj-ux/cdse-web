@@ -6,6 +6,7 @@ import { extractReceiptText } from '../../../lib/solar/pdf-text.js';
 import { expectedPeriodCount, isCompletePeriod, validatePeriodHistory } from '../../../lib/solar/periods.mjs';
 import { downloadSolarQuotePdf } from '../../../lib/solar/quote-pdf.js';
 import { calculateInverterSizing, selectSuggestedInverter } from '../../../lib/solar/inverter-sizing.mjs';
+import { COST_CATEGORY_LABELS, financeReportRows, financeRowsToCsv, projectFinancials } from '../../../lib/solar/financial-control.mjs';
 import {
   downloadAuthorizationLetter,
   downloadDossierIndex,
@@ -222,6 +223,16 @@ function errorMessage(error) {
     SELF_APPROVAL_REASON_REQUIRED: 'Como administrador y vendedor del proyecto, debes documentar el motivo de autorización excepcional.',
     APPROVED_COMMISSION_REQUIRED: 'La comisión debe estar autorizada antes de registrarla como pagada.',
     PAYMENT_REFERENCE_REQUIRED: 'Captura la referencia bancaria o comprobante de pago de la comisión.',
+    REFUND_DATA_INVALID: 'Captura un importe válido y explica el motivo del reembolso.',
+    REFUND_EXCEEDS_PAYMENT: 'El reembolso solicitado supera el saldo disponible de ese pago.',
+    PENDING_REFUND_REQUIRED: 'Este reembolso ya fue revisado. Actualiza la pantalla para consultar su estado.',
+    DECISION_REASON_REQUIRED: 'Documenta el motivo del rechazo.',
+    COST_AMOUNT_INVALID: 'Revisa la cantidad y el costo unitario antes de guardar.',
+    VOID_REASON_REQUIRED: 'Para anular un costo debes documentar el motivo.',
+    REVERSAL_REASON_REQUIRED: 'Para revertir un hito debes documentar el motivo.',
+    EARNED_MILESTONE_REQUIRED: 'Sólo puede revertirse un hito previamente devengado.',
+    RECOVERY_AMOUNT_INVALID: 'El importe a recuperar debe ser mayor a cero y no superar el saldo pendiente.',
+    RECOVERY_REFERENCE_REQUIRED: 'Captura la referencia del descuento o recuperación.',
   };
   return operationalMessages[raw] ?? (raw || 'Ocurrió un error inesperado.');
 }
@@ -1040,6 +1051,10 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
   const [message, setMessage] = useState('');
   const [paymentForm, setPaymentForm] = useState({ scheduleId: '', amount: '', receivedAt: new Date().toISOString().slice(0, 16), method: 'transfer', reference: '', notes: '' });
   const [commissionForm, setCommissionForm] = useState({ rate: '', adjustment: '0', reason: '', approvalReason: '', paymentReference: '', payrollReference: '' });
+  const [refundForm, setRefundForm] = useState({ paymentId: '', amount: '', reason: '', reference: '' });
+  const [costForm, setCostForm] = useState({ stage: 'actual', category: 'modules', description: '', quantity: '1', unitCost: '', vatRate: '16', status: 'paid', incurredAt: new Date().toISOString().slice(0, 10), supplier: '', reference: '' });
+  const [recoveryForm, setRecoveryForm] = useState({ amount: '', reference: '', reason: '' });
+  const [reportFilter, setReportFilter] = useState({ from: '', to: '', seller: 'all' });
 
   const visible = eligibleProjects.filter((project) => {
     const query = search.trim().toLowerCase();
@@ -1048,13 +1063,25 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
   const selected = eligibleProjects.find((project) => project.id === selectedId) ?? visible[0] ?? null;
   const schedules = selected?.solar_payment_schedules ?? [];
   const payments = [...(selected?.solar_payments ?? [])].sort((a, b) => String(b.received_at).localeCompare(String(a.received_at)));
+  const refunds = [...(selected?.solar_payment_refunds ?? [])].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const costs = [...(selected?.solar_project_cost_entries ?? [])].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   const commission = selected?.solar_commissions?.[0] ?? null;
   const milestones = commission?.solar_commission_milestones ?? [];
-  const reconciled = payments.filter((item) => item.status === 'reconciled').reduce((sum, item) => sum + Number(item.amount_mxn), 0);
+  const selectedFinancials = selected ? projectFinancials(selected) : null;
+  const reconciled = selectedFinancials?.netCollections ?? 0;
   const totalPortfolio = eligibleProjects.reduce((sum, item) => sum + Number(item.agreed_total_mxn ?? 0), 0);
-  const collectedPortfolio = eligibleProjects.reduce((sum, item) => sum + (item.solar_payments ?? []).filter((payment) => payment.status === 'reconciled').reduce((subtotal, payment) => subtotal + Number(payment.amount_mxn), 0), 0);
-  const pendingCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && ['earned', 'approved'].includes(item.status)).reduce((sum, item) => sum + Number(item.payable_amount_mxn ?? 0), 0);
-  const paidCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && item.status === 'paid').reduce((sum, item) => sum + Number(item.payable_amount_mxn ?? 0), 0);
+  const collectedPortfolio = eligibleProjects.reduce((sum, item) => sum + projectFinancials(item).netCollections, 0);
+  const pendingCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && ['earned', 'approved'].includes(item.status)).reduce((sum, item) => sum + Number(item.net_commission_mxn ?? item.payable_amount_mxn ?? 0), 0);
+  const paidCommissions = data.commissions.filter((item) => (isAdmin || item.seller_user_id === profile.user_id) && item.status === 'paid').reduce((sum, item) => sum + Math.max(Number(item.payable_amount_mxn ?? 0) - Number(item.recovered_amount_mxn ?? 0), 0), 0);
+  const reportProjects = eligibleProjects.filter((project) => {
+    const date = String(project.accepted_at ?? '').slice(0, 10);
+    return (!reportFilter.from || date >= reportFilter.from) && (!reportFilter.to || date <= reportFilter.to) && (reportFilter.seller === 'all' || project.seller_user_id === reportFilter.seller);
+  });
+  const reportTotals = reportProjects.reduce((totals, project) => {
+    const item = projectFinancials(project);
+    totals.revenue += item.revenueBeforeVat; totals.cost += item.actualCost; totals.margin += item.actualMargin;
+    return totals;
+  }, { revenue: 0, cost: 0, margin: 0 });
 
   useEffect(() => {
     if (!selected) return;
@@ -1101,6 +1128,87 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
       const { error } = await getSupabaseClient().rpc('decide_solar_payment', { p_payment_id: payment.id, p_decision: decision, p_reason: reason || null });
       return error;
     }, decision === 'reconciled' ? 'Pago conciliado y saldo actualizado.' : 'Comprobante rechazado con motivo registrado.');
+  }
+
+  async function requestRefund(event) {
+    event.preventDefault();
+    await run('refund', async () => {
+      const { error } = await getSupabaseClient().rpc('request_solar_payment_refund', {
+        p_payment_id: refundForm.paymentId, p_amount_mxn: Number(refundForm.amount),
+        p_reason: refundForm.reason, p_reference: refundForm.reference || null,
+      });
+      return error;
+    }, 'Reembolso solicitado. El saldo sólo cambiará cuando un administrador lo autorice.');
+    setRefundForm({ paymentId: '', amount: '', reason: '', reference: '' });
+  }
+
+  async function decideRefund(refund, decision) {
+    const reason = decision === 'rejected' ? window.prompt('Motivo del rechazo del reembolso:') : window.prompt('Referencia del reembolso realizado:');
+    if (!reason?.trim()) return;
+    await run(`refund-${refund.id}`, async () => {
+      const { error } = await getSupabaseClient().rpc('decide_solar_payment_refund', {
+        p_refund_id: refund.id, p_decision: decision,
+        p_decision_reason: decision === 'rejected' ? reason : null,
+        p_reference: decision === 'approved' ? reason : refund.reference || null,
+      });
+      return error;
+    }, decision === 'approved' ? 'Reembolso autorizado y aplicado al saldo del proyecto.' : 'Reembolso rechazado con motivo registrado.');
+  }
+
+  async function addCost(event) {
+    event.preventDefault();
+    await run('cost', async () => {
+      const { error } = await getSupabaseClient().rpc('add_solar_project_cost', {
+        p_project_id: selected.id, p_cost_stage: costForm.stage, p_category: costForm.category,
+        p_description: costForm.description, p_quantity: Number(costForm.quantity),
+        p_unit_cost_before_vat_mxn: Number(costForm.unitCost), p_vat_rate: Number(costForm.vatRate) / 100,
+        p_status: costForm.status, p_incurred_at: costForm.incurredAt || null,
+        p_supplier: costForm.supplier || null, p_reference: costForm.reference || null, p_notes: null,
+      });
+      return error;
+    }, 'Costo guardado en la bitácora del proyecto.');
+    setCostForm((current) => ({ ...current, description: '', quantity: '1', unitCost: '', supplier: '', reference: '' }));
+  }
+
+  async function voidCost(cost) {
+    const reason = window.prompt('Motivo para anular este costo sin borrarlo:');
+    if (!reason?.trim()) return;
+    await run(`cost-${cost.id}`, async () => {
+      const { error } = await getSupabaseClient().rpc('void_solar_project_cost', { p_cost_id: cost.id, p_reason: reason });
+      return error;
+    }, 'Costo anulado; el movimiento permanece visible para auditoría.');
+  }
+
+  async function reverseMilestone(milestone) {
+    const reason = window.prompt('Motivo del reverso de comisión:');
+    if (!reason?.trim()) return;
+    await run(`reverse-${milestone.id}`, async () => {
+      const { error } = await getSupabaseClient().rpc('reverse_solar_commission_milestone', {
+        p_commission_id: commission.id, p_milestone_code: milestone.milestone_code, p_reason: reason,
+      });
+      return error;
+    }, commission.status === 'paid' ? 'Hito revertido. Se abrió un saldo por recuperar al vendedor.' : 'Hito revertido y comisión recalculada.');
+  }
+
+  async function recordRecovery(event) {
+    event.preventDefault();
+    await run('recovery', async () => {
+      const { error } = await getSupabaseClient().rpc('record_solar_commission_recovery', {
+        p_commission_id: commission.id, p_amount_mxn: Number(recoveryForm.amount),
+        p_reference: recoveryForm.reference, p_reason: recoveryForm.reason || null,
+      });
+      return error;
+    }, 'Recuperación registrada y saldo de reverso actualizado.');
+    setRecoveryForm({ amount: '', reference: '', reason: '' });
+  }
+
+  function exportFinanceReport() {
+    const rows = financeReportRows(reportProjects, data.profileMap);
+    const blob = new Blob([`\ufeff${financeRowsToCsv(rows)}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = `cdse-control-financiero-${new Date().toISOString().slice(0, 10)}.csv`; anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   async function saveSchedule(schedule) {
@@ -1163,12 +1271,22 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
       <div><span>Comisiones por liquidar</span><strong>{money.format(pendingCommissions)}</strong><small>devengadas o autorizadas</small></div>
       <div><span>Comisiones pagadas</span><strong>{money.format(paidCommissions)}</strong><small>con referencia registrada</small></div>
     </div>
+    {isAdmin && <section className="sp-finance-report">
+      <div><p className="sp-section-number">REPORTE POR PERIODO</p><h2>Rentabilidad operativa</h2><p>Ingresos, costos y margen antes de IVA. Exportación auxiliar para conciliación contable.</p></div>
+      <div className="sp-report-filters">
+        <label className="sp-field"><span>Desde</span><input type="date" value={reportFilter.from} onChange={(event) => setReportFilter({ ...reportFilter, from: event.target.value })} /></label>
+        <label className="sp-field"><span>Hasta</span><input type="date" value={reportFilter.to} onChange={(event) => setReportFilter({ ...reportFilter, to: event.target.value })} /></label>
+        <label className="sp-field"><span>Vendedor</span><select value={reportFilter.seller} onChange={(event) => setReportFilter({ ...reportFilter, seller: event.target.value })}><option value="all">Todos</option>{Object.values(data.profileMap).filter((item) => item.role === 'seller' || item.role === 'admin').map((item) => <option value={item.user_id} key={item.user_id}>{item.full_name}</option>)}</select></label>
+        <button type="button" className="sp-button sp-button--secondary" onClick={exportFinanceReport} disabled={!reportProjects.length}>Exportar CSV</button>
+      </div>
+      <div className="sp-report-totals"><div><span>Venta antes de IVA</span><strong>{money.format(reportTotals.revenue)}</strong></div><div><span>Costo real pagado</span><strong>{money.format(reportTotals.cost)}</strong></div><div><span>Margen real</span><strong>{money.format(reportTotals.margin)}</strong><small>{reportTotals.revenue ? number.format(reportTotals.margin / reportTotals.revenue * 100) : 0}%</small></div><div><span>Proyectos</span><strong>{reportProjects.length}</strong></div></div>
+    </section>}
     <div className="sp-finance-layout">
       <aside className="sp-finance-index">
         <label className="sp-field"><span>Buscar proyecto</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Folio o cliente" /></label>
         <div className="sp-finance-projects">
           {visible.map((project) => {
-            const projectPaid = (project.solar_payments ?? []).filter((item) => item.status === 'reconciled').reduce((sum, item) => sum + Number(item.amount_mxn), 0);
+            const projectPaid = projectFinancials(project).netCollections;
             return <button type="button" className={selected?.id === project.id ? 'is-active' : ''} onClick={() => setSelectedId(project.id)} key={project.id}>
               <span>{project.folio}</span><strong>{project.customer_name}</strong><small>{money.format(projectPaid)} de {money.format(Number(project.agreed_total_mxn))}</small>
               <i><b style={{ width: `${Math.min(projectPaid / Math.max(Number(project.agreed_total_mxn), 1) * 100, 100)}%` }} /></i>
@@ -1184,6 +1302,7 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
           <div><span>Conciliado</span><strong>{money.format(reconciled)}</strong></div>
           <div><span>Saldo</span><strong>{money.format(Math.max(Number(selected.agreed_total_mxn) - reconciled, 0))}</strong></div>
         </div>
+        {isAdmin && <div className="sp-margin-strip"><div><span>Ingreso antes de IVA</span><strong>{money.format(selectedFinancials.revenueBeforeVat)}</strong></div><div><span>Presupuesto</span><strong>{money.format(selectedFinancials.budgetCost)}</strong></div><div><span>Costo real pagado</span><strong>{money.format(selectedFinancials.actualCost)}</strong></div><div className={selectedFinancials.actualMargin < 0 ? 'is-negative' : ''}><span>Margen real</span><strong>{money.format(selectedFinancials.actualMargin)}</strong><small>{number.format(selectedFinancials.actualMarginPercent)}%</small></div></div>}
         {message && <p className="sp-inline-notice">{message}</p>}
 
         <section className="sp-finance-section">
@@ -1204,20 +1323,31 @@ function Finance({ data, profile, isAdmin, refresh, onOpenProject }) {
             <button className="sp-button sp-button--primary" disabled={busy === 'payment'}>{busy === 'payment' ? 'Registrando…' : 'Registrar para conciliación'}</button>
           </form>
           <div className="sp-payment-ledger">
-            {payments.map((payment) => <article key={payment.id}><time>{new Date(payment.received_at).toLocaleDateString('es-MX')}</time><div><strong>{money.format(Number(payment.amount_mxn))}</strong><small>{payment.payment_method} · {payment.reference || 'sin referencia'}</small></div><span className={`sp-finance-status sp-finance-status--${payment.status}`}>{PAYMENT_STATUS_LABELS[payment.status]}</span>{isAdmin && payment.status === 'pending' && <div><button type="button" onClick={() => decidePayment(payment, 'reconciled')}>Conciliar</button><button type="button" onClick={() => decidePayment(payment, 'rejected')}>Rechazar</button></div>}</article>)}
+            {payments.map((payment) => <article key={payment.id}><time>{new Date(payment.received_at).toLocaleDateString('es-MX')}</time><div><strong>{money.format(Number(payment.amount_mxn))}</strong><small>{payment.payment_method} · {payment.reference || 'sin referencia'}</small></div><span className={`sp-finance-status sp-finance-status--${payment.status}`}>{PAYMENT_STATUS_LABELS[payment.status]}</span><div>{isAdmin && payment.status === 'pending' && <><button type="button" onClick={() => decidePayment(payment, 'reconciled')}>Conciliar</button><button type="button" onClick={() => decidePayment(payment, 'rejected')}>Rechazar</button></>}{['reconciled', 'refunded'].includes(payment.status) && <button type="button" onClick={() => setRefundForm({ ...refundForm, paymentId: payment.id, amount: '', reason: '', reference: payment.reference ?? '' })}>Reembolso</button>}</div></article>)}
             {!payments.length && <p>Aún no hay cobros registrados.</p>}
           </div>
+          {refundForm.paymentId && <form className="sp-refund-form" onSubmit={requestRefund}><div><strong>Solicitar reembolso</strong><small>Requiere autorización administrativa y conserva el pago original.</small></div><label className="sp-field"><span>Importe</span><input type="number" min="0.01" step="0.01" required value={refundForm.amount} onChange={(event) => setRefundForm({ ...refundForm, amount: event.target.value })} /></label><label className="sp-field"><span>Motivo</span><input minLength="5" required value={refundForm.reason} onChange={(event) => setRefundForm({ ...refundForm, reason: event.target.value })} /></label><label className="sp-field"><span>Referencia</span><input value={refundForm.reference} onChange={(event) => setRefundForm({ ...refundForm, reference: event.target.value })} /></label><button className="sp-button sp-button--secondary" disabled={busy === 'refund'}>Enviar a autorización</button><button type="button" className="sp-text-button" onClick={() => setRefundForm({ paymentId: '', amount: '', reason: '', reference: '' })}>Cancelar</button></form>}
+          {!!refunds.length && <div className="sp-refund-ledger"><h3>Reembolsos</h3>{refunds.map((refund) => <article key={refund.id}><div><strong>{money.format(Number(refund.amount_mxn))}</strong><small>{refund.reason}</small></div><span className={`sp-finance-status sp-finance-status--${refund.status}`}>{refund.status === 'approved' ? 'Autorizado' : refund.status === 'rejected' ? 'Rechazado' : 'Por autorizar'}</span>{isAdmin && refund.status === 'pending' && <div><button type="button" onClick={() => decideRefund(refund, 'approved')}>Autorizar</button><button type="button" onClick={() => decideRefund(refund, 'rejected')}>Rechazar</button></div>}</article>)}</div>}
           <p className="sp-compliance-note">Control interno: registrar un pago aquí no emite CFDI. Si la operación es en parcialidades, contabilidad debe revisar el complemento de recepción de pagos aplicable.</p>
         </section>
 
+        {isAdmin && <section className="sp-finance-section">
+          <div className="sp-subhead"><div><p className="sp-section-number">02 / COSTOS Y MARGEN</p><h2>Presupuesto contra realidad</h2></div><span>Importes antes de IVA</span></div>
+          <div className="sp-cost-summary"><div><span>Presupuesto activo</span><strong>{money.format(selectedFinancials.budgetCost)}</strong></div><div><span>Comprometido</span><strong>{money.format(selectedFinancials.committedCost)}</strong></div><div><span>Pagado real</span><strong>{money.format(selectedFinancials.actualCost)}</strong></div><div><span>Margen estimado</span><strong>{money.format(selectedFinancials.estimatedMargin)}</strong><small>{number.format(selectedFinancials.estimatedMarginPercent)}%</small></div></div>
+          <form className="sp-cost-form" onSubmit={addCost}><label className="sp-field"><span>Registro</span><select value={costForm.stage} onChange={(event) => setCostForm({ ...costForm, stage: event.target.value, status: event.target.value === 'budget' ? 'approved' : 'paid' })}><option value="actual">Costo real</option><option value="budget">Presupuesto</option></select></label><label className="sp-field"><span>Categoría</span><select value={costForm.category} onChange={(event) => setCostForm({ ...costForm, category: event.target.value })}>{Object.entries(COST_CATEGORY_LABELS).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><label className="sp-field sp-field--wide"><span>Concepto</span><input required minLength="2" maxLength="180" value={costForm.description} onChange={(event) => setCostForm({ ...costForm, description: event.target.value })} /></label><label className="sp-field"><span>Cantidad</span><input type="number" min="0.001" step="0.001" required value={costForm.quantity} onChange={(event) => setCostForm({ ...costForm, quantity: event.target.value })} /></label><label className="sp-field"><span>Costo unitario sin IVA</span><input type="number" min="0" step="0.01" required value={costForm.unitCost} onChange={(event) => setCostForm({ ...costForm, unitCost: event.target.value })} /></label><label className="sp-field"><span>IVA</span><select value={costForm.vatRate} onChange={(event) => setCostForm({ ...costForm, vatRate: event.target.value })}><option value="16">16%</option><option value="0">0%</option></select></label><label className="sp-field"><span>Estado</span><select value={costForm.status} onChange={(event) => setCostForm({ ...costForm, status: event.target.value })}><option value="approved">Aprobado</option>{costForm.stage === 'actual' && <><option value="committed">Comprometido</option><option value="paid">Pagado</option></>}</select></label><label className="sp-field"><span>Fecha</span><input type="date" value={costForm.incurredAt} onChange={(event) => setCostForm({ ...costForm, incurredAt: event.target.value })} /></label><label className="sp-field"><span>Proveedor</span><input value={costForm.supplier} onChange={(event) => setCostForm({ ...costForm, supplier: event.target.value })} /></label><label className="sp-field"><span>Referencia</span><input value={costForm.reference} onChange={(event) => setCostForm({ ...costForm, reference: event.target.value })} /></label><button className="sp-button sp-button--primary" disabled={busy === 'cost'}>Agregar costo</button></form>
+          <div className="sp-cost-ledger">{costs.map((cost) => <article className={cost.status === 'void' ? 'is-void' : ''} key={cost.id}><span>{cost.cost_stage === 'budget' ? 'PRESUPUESTO' : 'REAL'}</span><div><strong>{cost.description}</strong><small>{COST_CATEGORY_LABELS[cost.category]} · {cost.supplier || 'sin proveedor'} · {cost.status}</small></div><b>{money.format(Number(cost.amount_before_vat_mxn))}</b>{cost.status !== 'void' && <button type="button" onClick={() => voidCost(cost)}>Anular</button>}</article>)}{!costs.length && <p>Captura costos para calcular el margen del proyecto.</p>}</div>
+          <p className="sp-compliance-note">Los importes se comparan antes de IVA. Este control es operativo y debe conciliarse con pólizas, CFDI y estados bancarios en contabilidad.</p>
+        </section>}
+
         <section className="sp-finance-section">
-          <div className="sp-subhead"><div><p className="sp-section-number">02 / COMISIÓN</p><h2>Liquidación del vendedor</h2></div>{commission && <span>{COMMISSION_STATUS_LABELS[commission.status] ?? commission.status}</span>}</div>
+          <div className="sp-subhead"><div><p className="sp-section-number">{isAdmin ? '03' : '02'} / COMISIÓN</p><h2>Liquidación del vendedor</h2></div>{commission && <span>{COMMISSION_STATUS_LABELS[commission.status] ?? commission.status}</span>}</div>
           {commission ? <>
-            <div className="sp-commission-equation"><div><span>Base antes de IVA</span><strong>{money.format(Number(commission.base_before_vat_mxn))}</strong></div><b>×</b><div><span>Tasa</span><strong>{number.format(Number(commission.rate_percent))}%</strong></div><b>+</b><div><span>Ajuste</span><strong>{money.format(Number(commission.adjustment_mxn))}</strong></div><b>=</b><div className="is-total"><span>Comisión</span><strong>{money.format(Number(commission.payable_amount_mxn))}</strong></div></div>
-            <div className="sp-milestones">{milestones.sort((a, b) => a.milestone_code.localeCompare(b.milestone_code)).map((milestone) => <article className={milestone.status === 'earned' ? 'is-earned' : ''} key={milestone.id}><span>{milestone.status === 'earned' ? '✓' : milestone.weight_percent + '%'}</span><div><strong>{milestone.label}</strong><small>{milestone.status === 'earned' ? `Confirmado ${new Date(milestone.earned_at).toLocaleDateString('es-MX')}` : 'Pendiente de evidencia'}</small></div>{isAdmin && milestone.status !== 'earned' && <button type="button" onClick={() => confirmMilestone(milestone.milestone_code)} disabled={busy === `milestone-${milestone.milestone_code}`}>Confirmar</button>}</article>)}</div>
+            <div className="sp-commission-equation"><div><span>Base antes de IVA</span><strong>{money.format(Number(commission.base_before_vat_mxn))}</strong></div><b>×</b><div><span>Tasa</span><strong>{number.format(Number(commission.rate_percent))}%</strong></div><b>+</b><div><span>Ajuste</span><strong>{money.format(Number(commission.adjustment_mxn))}</strong></div><b>=</b><div className="is-total"><span>Comisión neta</span><strong>{money.format(Number(commission.net_commission_mxn ?? commission.payable_amount_mxn))}</strong>{Number(commission.reversed_amount_mxn ?? 0) > 0 && <small>Reversado: {money.format(Number(commission.reversed_amount_mxn))}</small>}</div></div>
+            <div className="sp-milestones">{milestones.sort((a, b) => a.milestone_code.localeCompare(b.milestone_code)).map((milestone) => <article className={milestone.status === 'earned' ? 'is-earned' : milestone.status === 'reversed' ? 'is-reversed' : ''} key={milestone.id}><span>{milestone.status === 'earned' ? '✓' : milestone.status === 'reversed' ? '↶' : milestone.weight_percent + '%'}</span><div><strong>{milestone.label}</strong><small>{milestone.status === 'earned' ? `Confirmado ${new Date(milestone.earned_at).toLocaleDateString('es-MX')}` : milestone.status === 'reversed' ? `Revertido: ${milestone.reversal_reason}` : 'Pendiente de evidencia'}</small></div>{isAdmin && milestone.status !== 'earned' && commission.status !== 'paid' && <button type="button" onClick={() => confirmMilestone(milestone.milestone_code)} disabled={busy === `milestone-${milestone.milestone_code}`}>Confirmar</button>}{isAdmin && milestone.status === 'earned' && <button type="button" onClick={() => reverseMilestone(milestone)} disabled={busy === `reverse-${milestone.id}`}>Revertir</button>}</article>)}</div>
             {isAdmin && !['approved', 'paid', 'void'].includes(commission.status) && <form className="sp-commission-policy" onSubmit={saveCommission}><label className="sp-field"><span>Tasa (5%–10%)</span><input type="number" min="0" max="10" step="0.1" value={commissionForm.rate} onChange={(event) => setCommissionForm({ ...commissionForm, rate: event.target.value })} /></label><label className="sp-field"><span>Ajuste MXN</span><input type="number" step="0.01" value={commissionForm.adjustment} onChange={(event) => setCommissionForm({ ...commissionForm, adjustment: event.target.value })} /></label><label className="sp-field"><span>Justificación si hay ajuste</span><input value={commissionForm.reason} onChange={(event) => setCommissionForm({ ...commissionForm, reason: event.target.value })} /></label><button className="sp-button sp-button--secondary" disabled={busy === 'commission-terms'}>Guardar política</button></form>}
             {isAdmin && commission.status === 'earned' && <div className="sp-commission-action"><label className="sp-field"><span>Motivo de autorización propia (sólo si aplica)</span><input value={commissionForm.approvalReason} onChange={(event) => setCommissionForm({ ...commissionForm, approvalReason: event.target.value })} placeholder="Se audita cuando administrador y vendedor son la misma persona" /></label><button type="button" className="sp-button sp-button--primary" onClick={approveCommission} disabled={busy === 'approve'}>Autorizar comisión</button></div>}
             {isAdmin && commission.status === 'approved' && <form className="sp-commission-action" onSubmit={payCommission}><label className="sp-field"><span>Referencia de pago</span><input required value={commissionForm.paymentReference} onChange={(event) => setCommissionForm({ ...commissionForm, paymentReference: event.target.value })} /></label><label className="sp-field"><span>Referencia de nómina/contabilidad</span><input value={commissionForm.payrollReference} onChange={(event) => setCommissionForm({ ...commissionForm, payrollReference: event.target.value })} /></label><button className="sp-button sp-button--primary" disabled={busy === 'pay'}>Registrar comisión pagada</button></form>}
+            {isAdmin && Number(commission.clawback_balance_mxn ?? 0) > 0 && <form className="sp-recovery-form" onSubmit={recordRecovery}><div><strong>Saldo por recuperar</strong><span>{money.format(Number(commission.clawback_balance_mxn))}</span><small>Comisión ya pagada cuyo hito fue revertido.</small></div><label className="sp-field"><span>Importe recuperado</span><input type="number" min="0.01" max={Number(commission.clawback_balance_mxn)} step="0.01" required value={recoveryForm.amount} onChange={(event) => setRecoveryForm({ ...recoveryForm, amount: event.target.value })} /></label><label className="sp-field"><span>Referencia</span><input required value={recoveryForm.reference} onChange={(event) => setRecoveryForm({ ...recoveryForm, reference: event.target.value })} /></label><label className="sp-field"><span>Nota</span><input value={recoveryForm.reason} onChange={(event) => setRecoveryForm({ ...recoveryForm, reason: event.target.value })} /></label><button className="sp-button sp-button--secondary" disabled={busy === 'recovery'}>Registrar recuperación</button></form>}
             <p className="sp-compliance-note">La comisión no se calcula sobre IVA. Para personal subordinado, el registro interno debe conciliarse con nómina y el comprobante fiscal correspondiente.</p>
           </> : <EmptyState title="Sin comisión asignada" detail="Este proyecto no tiene vendedor o política de comisión asociada." />}
         </section>
@@ -2159,7 +2289,7 @@ export default function SolarPortal() {
     const [quotes, projects, tasks, commissions, workOrders, crews, fieldWorkers, cfeCases, leads, receipts, modules, inverters, prices, promotions, packages, financingOptions, zones, profiles] =
       await Promise.all([
         client.from('solar_quotes').select('*, solar_leads(name,phone_e164,municipality,email,postal_code), solar_modules(brand,model,watts), solar_inverters(brand,model,ac_capacity_kw,phases,warranty_years), solar_receipts(id,tariff_code,service_number,service_number_last4,solar_consumption_periods(sequence,period_start,period_end,covered_months,kwh,amount_mxn))').order('created_at', { ascending: false }),
-        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
+        client.from('solar_projects').select('*, solar_quotes(folio,panel_count,total_mxn), solar_project_documents(*, solar_document_requirements(stage,requirement_scope,regulatory_reference), solar_project_document_files(*)), solar_project_checklist_items(*), solar_project_tasks(*), solar_payment_schedules(*), solar_payments(*), solar_payment_refunds(*), solar_project_cost_entries(*), solar_commissions(*, solar_commission_milestones(*), solar_commission_events(*)), solar_site_surveys(*), solar_engineering_revisions(*)').order('updated_at', { ascending: false }),
         client.from('solar_project_tasks').select('*, solar_projects(folio,customer_name,status,seller_user_id)').order('due_at', { ascending: true, nullsFirst: false }),
         client.from('solar_commissions').select('*').order('updated_at', { ascending: false }),
         client.from('solar_work_orders').select('*, solar_projects(folio,customer_name,status,seller_user_id), solar_crews(name,daily_capacity_panels), solar_work_order_checklist_items(*), solar_work_order_incidents(*)').order('scheduled_start', { ascending: true }),

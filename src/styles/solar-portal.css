@@ -451,6 +451,17 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-agenda-actions button:disabled { opacity: .45; }
 
 .sp-finance-layout { display: grid; grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 3.5rem; align-items: start; }
+.sp-finance-report { display: grid; grid-template-columns: minmax(16rem, .75fr) minmax(0, 1.4fr); gap: clamp(2rem, 5vw, 5rem); margin-top: 3rem; border-block: 1px solid var(--sp-ink); padding: 1.5rem 0; }
+.sp-finance-report h2 { margin: .35rem 0 0; font-family: "Newsreader", serif; font-size: clamp(2rem, 4vw, 3rem); line-height: 1; }
+.sp-finance-report p:not(.sp-section-number) { max-width: 34rem; margin: .75rem 0 0; color: var(--sp-muted); font-size: .75rem; line-height: 1.5; }
+.sp-report-filters { display: grid; grid-template-columns: 1fr 1fr 1.25fr auto; gap: 1rem; align-items: end; }
+.sp-report-totals { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--sp-line); }
+.sp-report-totals > div { padding: 1.1rem 1rem 0 0; }
+.sp-report-totals > div + div { border-left: 1px solid var(--sp-line); padding-left: 1rem; }
+.sp-report-totals span, .sp-report-totals strong, .sp-report-totals small { display: block; }
+.sp-report-totals span { color: var(--sp-muted); font-size: .62rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.sp-report-totals strong { margin-top: .35rem; font-size: 1.2rem; }
+.sp-report-totals small { color: var(--sp-muted); font-size: .68rem; }
 .sp-finance-index { position: sticky; top: 2rem; }
 .sp-finance-projects { margin-top: 1.25rem; border-top: 1px solid var(--sp-ink); }
 .sp-finance-projects > button { width: 100%; display: grid; gap: .35rem; border: 0; border-bottom: 1px solid var(--sp-line); padding: 1rem 0; text-align: left; background: transparent; cursor: pointer; }
@@ -469,6 +480,14 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-balance-strip span, .sp-balance-strip strong { display: block; }
 .sp-balance-strip span { color: var(--sp-muted); font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .sp-balance-strip strong { margin-top: .4rem; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.sp-margin-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: .8rem; color: var(--sp-white); background: var(--sp-ink); }
+.sp-margin-strip > div { min-width: 0; padding: 1rem; }
+.sp-margin-strip > div + div { border-left: 1px solid color-mix(in oklch, var(--sp-white) 18%, transparent); }
+.sp-margin-strip span, .sp-margin-strip strong, .sp-margin-strip small { display: block; }
+.sp-margin-strip span { color: color-mix(in oklch, var(--sp-white) 65%, transparent); font-size: .6rem; text-transform: uppercase; }
+.sp-margin-strip strong { margin-top: .35rem; font-size: 1rem; }
+.sp-margin-strip small { color: var(--sp-sun); font-size: .68rem; }
+.sp-margin-strip .is-negative strong { color: #ff9b85; }
 .sp-finance-section { margin-top: 4rem; }
 .sp-finance-section > .sp-subhead { align-items: end; border-bottom: 1px solid var(--sp-ink); padding-bottom: 1rem; }
 .sp-finance-section > .sp-subhead h2 { margin: .35rem 0 0; font-family: "Newsreader", serif; font-size: clamp(2rem, 4vw, 3rem); }
@@ -489,6 +508,32 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-payment-ledger strong, .sp-payment-ledger small { display: block; }
 .sp-payment-ledger article > div:last-child { display: flex; gap: .75rem; }
 .sp-payment-ledger button { border: 0; padding: .5rem 0; color: var(--sp-blue); background: transparent; font-weight: 750; cursor: pointer; }
+.sp-refund-form, .sp-recovery-form { display: grid; grid-template-columns: minmax(11rem, 1.2fr) .65fr 1.2fr 1fr auto auto; gap: 1rem; align-items: end; margin-top: 1.5rem; border-left: 3px solid var(--sp-sun); padding: 1rem; background: var(--sp-white); }
+.sp-refund-form > div strong, .sp-refund-form > div small, .sp-recovery-form > div strong, .sp-recovery-form > div span, .sp-recovery-form > div small { display: block; }
+.sp-refund-form > div small, .sp-recovery-form > div small { margin-top: .3rem; color: var(--sp-muted); font-size: .67rem; }
+.sp-refund-ledger { margin-top: 1.5rem; }
+.sp-refund-ledger h3 { font-family: "Newsreader", serif; font-size: 1.5rem; }
+.sp-refund-ledger article { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; border-bottom: 1px solid var(--sp-line); padding: .8rem 0; }
+.sp-refund-ledger strong, .sp-refund-ledger small { display: block; }
+.sp-refund-ledger small { margin-top: .25rem; color: var(--sp-muted); font-size: .68rem; }
+.sp-refund-ledger button { min-height: 2.75rem; border: 0; color: var(--sp-blue); background: transparent; font-weight: 750; cursor: pointer; }
+.sp-cost-summary { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--sp-line); }
+.sp-cost-summary > div { padding: 1.2rem 1rem 1.2rem 0; }
+.sp-cost-summary > div + div { border-left: 1px solid var(--sp-line); padding-left: 1rem; }
+.sp-cost-summary span, .sp-cost-summary strong, .sp-cost-summary small { display: block; }
+.sp-cost-summary span { color: var(--sp-muted); font-size: .62rem; font-weight: 750; text-transform: uppercase; }
+.sp-cost-summary strong { margin-top: .35rem; font-size: 1.15rem; }
+.sp-cost-summary small { color: var(--sp-muted); font-size: .68rem; }
+.sp-cost-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem; align-items: end; margin-top: 1.5rem; padding: 1.25rem; background: var(--sp-white); border-block: 1px solid var(--sp-line); }
+.sp-cost-form .sp-field--wide { grid-column: span 2; }
+.sp-cost-form .sp-button { min-height: 3rem; }
+.sp-cost-ledger { margin-top: 1.5rem; }
+.sp-cost-ledger article { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; border-bottom: 1px solid var(--sp-line); padding: .85rem 0; }
+.sp-cost-ledger article > span { color: var(--sp-blue); font-size: .6rem; font-weight: 800; letter-spacing: .06em; }
+.sp-cost-ledger strong, .sp-cost-ledger small { display: block; }
+.sp-cost-ledger small { margin-top: .25rem; color: var(--sp-muted); font-size: .68rem; }
+.sp-cost-ledger button { min-height: 2.75rem; border: 0; color: var(--sp-danger); background: transparent; font-weight: 750; cursor: pointer; }
+.sp-cost-ledger .is-void { opacity: .55; text-decoration: line-through; }
 .sp-compliance-note { border-left: 3px solid var(--sp-sun); padding: .75rem 0 .75rem 1rem; color: var(--sp-muted); font-size: .72rem; line-height: 1.55; }
 .sp-commission-equation { display: grid; grid-template-columns: 1.2fr auto .65fr auto .85fr auto 1.1fr; gap: 1rem; align-items: center; padding: 1.75rem 0; border-bottom: 1px solid var(--sp-line); }
 .sp-commission-equation > div span, .sp-commission-equation > div strong { display: block; }
@@ -501,11 +546,13 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
 .sp-milestones article { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; gap: 1rem; align-items: center; border: 1px solid var(--sp-line); padding: 1rem; }
 .sp-milestones article > span { width: 3rem; height: 3rem; display: grid; place-items: center; border: 1px solid var(--sp-line); color: var(--sp-muted); font-weight: 800; }
 .sp-milestones article.is-earned > span { border-color: var(--sp-success); color: var(--sp-white); background: var(--sp-success); }
+.sp-milestones article.is-reversed > span { border-color: var(--sp-danger); color: var(--sp-danger); }
 .sp-milestones strong, .sp-milestones small { display: block; }
 .sp-milestones small { margin-top: .25rem; color: var(--sp-muted); font-size: .68rem; }
 .sp-milestones button { border: 0; color: var(--sp-blue); background: transparent; font-size: .7rem; font-weight: 750; cursor: pointer; }
 .sp-commission-policy, .sp-commission-action { display: grid; grid-template-columns: .6fr .8fr 1.4fr auto; gap: 1rem; align-items: end; margin-top: 1.5rem; padding: 1.25rem; background: var(--sp-white); border-block: 1px solid var(--sp-line); }
 .sp-commission-action { grid-template-columns: minmax(0, 1fr) auto; }
+.sp-recovery-form { grid-template-columns: 1.1fr .7fr 1fr 1fr auto; border-left-color: var(--sp-danger); }
 
 .sp-field-signal { display: flex; align-items: center; gap: .8rem; margin: -2rem 0 1.5rem; color: var(--sp-muted); font-size: .7rem; }
 .sp-field-signal b { padding: .32rem .55rem; color: var(--sp-white); text-transform: uppercase; letter-spacing: .07em; }
@@ -683,8 +730,12 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-project-agenda { position: static; }
   .sp-finance-layout { grid-template-columns: 1fr; }
   .sp-finance-index { position: static; }
+  .sp-finance-report { grid-template-columns: 1fr; }
+  .sp-report-filters { grid-template-columns: repeat(2, 1fr); }
   .sp-payment-form { grid-template-columns: repeat(2, 1fr); }
   .sp-payment-form .sp-button { width: 100%; }
+  .sp-refund-form, .sp-recovery-form { grid-template-columns: repeat(2, 1fr); }
+  .sp-cost-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sp-install-schedule { grid-template-columns: 1fr; }
   .sp-work-order-form { position: static; }
   .sp-team-operations { grid-template-columns: 1fr; }
@@ -772,8 +823,14 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-agenda-row { grid-template-columns: 1fr; gap: .6rem; padding: 1rem 0; }
   .sp-agenda-actions { grid-column: 1; }
   .sp-finance-title { align-items: start; flex-direction: column; }
+  .sp-report-filters, .sp-report-totals { grid-template-columns: 1fr 1fr; }
+  .sp-report-totals > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--sp-line); }
+  .sp-report-totals > div:nth-child(4) { border-top: 1px solid var(--sp-line); }
   .sp-balance-strip { grid-template-columns: 1fr; }
   .sp-balance-strip > div + div { border-top: 1px solid var(--sp-line); border-left: 0; padding-left: 0; }
+  .sp-margin-strip, .sp-cost-summary { grid-template-columns: 1fr 1fr; }
+  .sp-margin-strip > div:nth-child(3), .sp-cost-summary > div:nth-child(3) { border-top: 1px solid var(--sp-line); border-left: 0; }
+  .sp-margin-strip > div:nth-child(4), .sp-cost-summary > div:nth-child(4) { border-top: 1px solid var(--sp-line); }
   .sp-schedule-list article { grid-template-columns: 1fr 1fr; gap: .7rem; padding: 1rem 0; }
   .sp-schedule-list article > div { grid-column: 1 / -1; grid-row: 1; }
   .sp-schedule-list .sp-finance-status { grid-column: 2; grid-row: 1; justify-self: end; }
@@ -781,6 +838,10 @@ td small { margin-top: .25rem; color: var(--sp-muted); }
   .sp-payment-ledger article { grid-template-columns: 1fr auto; }
   .sp-payment-ledger time { grid-column: 1 / -1; }
   .sp-payment-ledger article > div:last-child { grid-column: 1 / -1; }
+  .sp-refund-form, .sp-recovery-form, .sp-cost-form { grid-template-columns: 1fr; padding-inline: .85rem; }
+  .sp-cost-form .sp-field--wide { grid-column: auto; }
+  .sp-refund-ledger article, .sp-cost-ledger article { grid-template-columns: 1fr auto; }
+  .sp-refund-ledger article > div, .sp-cost-ledger article > div { grid-column: 1 / -1; }
   .sp-commission-equation { grid-template-columns: 1fr 1fr; }
   .sp-commission-equation > b { display: none; }
   .sp-milestones { grid-template-columns: 1fr; }
