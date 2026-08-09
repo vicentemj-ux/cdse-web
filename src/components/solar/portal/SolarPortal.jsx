@@ -2588,7 +2588,7 @@ export default function SolarPortal() {
         {activeView === 'projects' && <Projects data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} openProjectId={openProjectId} />}
         {activeView === 'agenda' && <Agenda data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
         {activeView === 'installations' && <Installations data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
-        {activeView === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} openSerialId={openInventorySerialId} /></Suspense>}
+        {activeView === 'inventory' && <Suspense fallback={<div className="sp-loading sp-loading--module">Conciliando existencias y apartados…</div>}><Inventory data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} openSerialId={openInventorySerialId} /></Suspense>}
         {activeView === 'cfe' && <CfeTracking data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} openCaseId={openCfeCaseId} />}
         {activeView === 'post-sales' && <Suspense fallback={<div className="sp-loading sp-loading--module">Preparando continuidad del proyecto…</div>}><PostSales data={data} refresh={() => load(session)} isAdmin={isAdmin} onOpenProject={openProject} openProjectId={openProjectId} /></Suspense>}
         {activeView === 'finance' && <Finance data={data} refresh={() => load(session)} isAdmin={isAdmin} profile={profile} onOpenProject={openProject} />}
