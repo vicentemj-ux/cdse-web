@@ -111,4 +111,7 @@ Mensualmente, administración debe hacer conteo físico por ubicación. Las dife
 - El costo mostrado usa el costo unitario de catálogo y es auxiliar operativo, no póliza contable.
 - No se generan órdenes de compra ni transferencias entre almacenes en esta fase.
 - Los consumibles no se infieren: deben catalogarse y planearse según ingeniería real.
-- La cuarentena, sustitución por garantía y retiro conservan estados reservados en el modelo; su interfaz operativa se incorporará junto con el flujo de RMA/proveedor.
+- La cuarentena, devolución a proveedor, reemplazo y retiro se controlan desde
+  **Postventa → Garantías / RMA**. La recepción del reemplazo genera una partida y
+  reserva una serie disponible; su entrega e instalación continúan en Inventario
+  para conservar la misma cadena de custodia.

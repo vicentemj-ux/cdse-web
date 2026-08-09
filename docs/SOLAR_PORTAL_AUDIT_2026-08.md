@@ -1,7 +1,7 @@
 # Auditoría vigente del portal CDSE Solar — agosto de 2026
 
 Fecha de revisión: 9 de agosto de 2026. Evidencia: esquema remoto hasta la
-migración `202608090001`, componentes publicados, 39 pruebas automatizadas,
+migración `202608090003`, componentes publicados, 43 pruebas automatizadas,
 compilación de 554 rutas y documentación operativa del repositorio.
 
 ## Veredicto de patrones de interfaz
@@ -42,7 +42,7 @@ contexto, validación en línea ni recuperación clara.
 | Cambio de medidor e interconexión | Logrado | `solar_cfe_cases`, observaciones y contratos |
 | Comisión 5–10% antes de IVA | Logrado | libro, hitos, aprobación, pago, reverso y recuperación |
 | Costos y margen | Logrado | migraciones `010`/`011`, reporte por periodo y CSV |
-| Postventa y garantías | Logrado | migración `012`, activos, casos, generación y seguimiento |
+| Postventa y garantías | Logrado | migraciones `012`/`202608090003`, activos, casos, generación, RMA, reemplazos y vigencias |
 | Inventario comprometido y consumido | Logrado | migración `013`, saldos, partidas, RPC transaccionales y libro mayor |
 | Funciones y pertenencia por proyecto | Logrado | migración `015`, guardas por acción y Equipo y accesos |
 | Búsqueda transversal | Logrado | índice autorizado por RLS y acceso por cliente, teléfono, folio, servicio, CFE o serie |
@@ -86,8 +86,8 @@ Patrones a corregir:
 
 ## Prioridad de ejecución
 
-1. **Siguiente:** cuarentena, devolución a proveedor, reemplazo y RMA de garantía.
-2. **Después:** integración opcional con portales de monitoreo.
+1. **Siguiente:** integración opcional con portales de monitoreo.
+2. **Después:** analítica consolidada de conversión, ciclo y rentabilidad.
 3. **Calidad continua:** reemplazo de diálogos y división progresiva del bundle.
 
 La auditoría no constituye dictamen legal, fiscal, laboral ni eléctrico. La

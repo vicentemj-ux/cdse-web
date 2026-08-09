@@ -12,7 +12,7 @@ Fecha de corte: 9 de agosto de 2026.
 - **Fase 3 — instalación operativa:** implementada. Incluye agenda de capacidad, cuadrillas y personal, detección de traslapes, orden móvil, puerta de seguridad, checklist de 23 controles, evidencia, incidencias con pausa automática, tolerancia local a pérdida de señal, acta de entrega PDF, inventario físico/apartado/entregado y cadena de custodia por serie hasta Postventa.
 - **Fase 4 — seguimiento CFE:** implementada. Incluye expediente ampliado, ingreso y folio, responsable de espera, seguimiento, referencia configurable, ciclos de observación/respuesta, contratos, cambio de medidor e interconexión.
 - **Fase 5 implementada:** reembolsos autorizables, costos presupuestados/reales, margen, reversos y recuperación de comisiones, reporte por periodo/vendedor y CSV auxiliar. Como mejora posterior de campo permanece la carga fotográfica reanudable en segundo plano.
-- **Fase 6 base implementada:** activos y garantías desde la instalación, casos de servicio con objetivos internos, generación real vs propuesta, satisfacción y autorización explícita de referidos.
+- **Fase 6 base implementada:** activos y garantías desde la instalación, casos de servicio con objetivos internos, generación real vs propuesta, satisfacción, autorización explícita de referidos y RMA con cuarentena, evidencia, proveedor, reemplazo serializado y renovación de vigencia.
 - **Funciones y acceso implementados:** perfiles de ventas, operaciones, ingeniería, instalación, finanzas y consulta; navegación por función, pertenencia explícita por proyecto, guardas de acción en base de datos, suspensión de cuentas y bitácora de asignaciones.
 
 ## 1. Objetivo
@@ -372,6 +372,9 @@ Extensiones posteriores:
 - [implementado] lecturas de generación;
 - [implementado] comparación propuesta/real;
 - [implementado] satisfacción y autorización de referidos;
+- [implementado] reclamaciones de garantía, cuarentena, expediente técnico y RMA;
+- [implementado] recepción, reserva, instalación y retiro trazable de reemplazos;
+- [implementado] extensión por reparación y renovación de garantía por sustitución;
 - [pendiente] integración automática con portales de monitoreo;
 - [pendiente] analítica consolidada de conversión, ciclo, retrasos y rentabilidad.
 
